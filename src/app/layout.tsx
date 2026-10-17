@@ -8,6 +8,7 @@ import PipChat from "@/components/PipChat";
 import PipReactions from "@/components/PipReactions";
 import CommandPalette from "@/components/CommandPalette";
 import SiteHeader from "@/components/SiteHeader";
+import Intro from "@/components/Intro";
 
 const serif = Fraunces({ subsets: ["latin"], axes: ["opsz"], display: "swap", variable: "--font-serif" });
 const ui = Fredoka({ subsets: ["latin"], display: "swap", variable: "--font-ui" });
@@ -34,12 +35,14 @@ export const viewport: Viewport = {
 
 // Apply the saved theme before first paint to avoid a flash.
 const themeInit = `try{var t=localStorage.getItem("pip-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}`;
+// First visit in this tab (no #deep-link, no ?intro=0): flag the opening scene before first paint so there is no flash of the page behind it.
+const introInit = `try{if(!sessionStorage.getItem("pip-intro-seen")&&!location.hash&&!/[?&]intro=0/.test(location.search))document.documentElement.dataset.intro="on"}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${serif.variable} ${ui.variable} ${body.variable}`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+        <script dangerouslySetInnerHTML={{ __html: themeInit + introInit }} />
       </head>
       <body>
         <noscript><style>{".scene{opacity:1!important;transform:none!important}"}</style></noscript>
@@ -51,6 +54,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <CommandPalette />
           <PipChat />
           <PipReactions />
+          <Intro />
         </AudioProvider>
       </body>
     </html>

@@ -1,5 +1,16 @@
 import { test, expect, type Page } from "@playwright/test";
 
+/**
+ * The cinematic intro shows once per tab on a first visit. Every test except the "cinematic intro" block below
+ * starts as a returning visitor (flag set) so the overlay never sits in front of the page under test.
+ * The "t0" marker makes the flag a one-time seed, so reloads inside a test reflect what the app itself saved.
+ */
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => { try { if (!sessionStorage.getItem("t0")) sessionStorage.setItem("pip-intro-seen", "1"); } catch {} });
+});
+const firstVisit = (page: Page) =>
+  page.addInitScript(() => { try { if (!sessionStorage.getItem("t0")) { sessionStorage.removeItem("pip-intro-seen"); sessionStorage.setItem("t0", "1"); } } catch {} });
+
 /** Collects console errors and uncaught exceptions (the rubric asks for zero console errors). */
 function watchErrors(page: Page) {
   const errors: string[] = [];
@@ -270,5 +281,90 @@ test.describe("3D dream mobile", () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     expect(overflow).toBeLessThanOrEqual(1);
     expect(errors).toEqual([]);
+  });
+});
+
+test.describe("cinematic intro", () => {
+  test.beforeEach(async ({ page }) => { await firstVisit(page); });
+
+  const intro = (page: Page) => page.getByRole("dialog", { name: /tucking in the stars/ });
+
+  test("plays on a first visit, then Enter opens the site and it does not return on reload", async ({ page }) => {
+    const errors = watchErrors(page);
+    await page.goto("/");
+    await expect(intro(page)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Skip intro" })).toBeVisible();
+    const enter = page.getByRole("button", { name: /Enter the Dream Workshop/ });
+    await expect(enter).toBeVisible(); // fades in after ~2.6 s
+    await expect(enter).toBeFocused();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+    await enter.click();
+    await expect(intro(page)).toBeHidden();
+    await expect(page.locator("html")).not.toHaveAttribute("data-intro", "on");
+    await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
+    await expect(page.getByRole("button", { name: /^Sound off/ })).toHaveAttribute("aria-pressed", "false"); // silent by default
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(intro(page)).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+
+  test("Skip intro leaves immediately, without waiting for the button", async ({ page }) => {
+    await page.goto("/");
+    await expect(intro(page)).toBeVisible();
+    await page.getByRole("button", { name: "Skip intro" }).click();
+    await expect(intro(page)).toBeHidden();
+    await expect(page.getByRole("button", { name: "Switch to night mode" })).toBeEnabled();
+  });
+
+  test("Escape skips, and the page behind is inert while the intro is open", async ({ page }) => {
+    await page.goto("/");
+    await expect(intro(page)).toBeVisible();
+    await expect(page.locator("main")).toHaveAttribute("inert", "");
+    await page.keyboard.press("Escape");
+    await expect(intro(page)).toBeHidden();
+    await expect(page.locator("main")).not.toHaveAttribute("inert", "");
+  });
+
+  test("Enter with sound is an explicit opt-in", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /Enter with sound/ }).click();
+    await expect(intro(page)).toBeHidden();
+    await expect(page.getByRole("button", { name: /^Sound on/ })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("replay button in the footer brings the intro back", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Skip intro" }).click();
+    await expect(intro(page)).toBeHidden();
+    await page.getByRole("button", { name: "Replay the intro ✦" }).scrollIntoViewIfNeeded();
+    await page.getByRole("button", { name: "Replay the intro ✦" }).click();
+    await expect(intro(page)).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(intro(page)).toBeHidden();
+  });
+
+  test("deep links and ?intro=0 skip the intro", async ({ page }) => {
+    await page.goto("/#projects");
+    await expect(page.locator("#projects")).toBeVisible();
+    await expect(intro(page)).toBeHidden();
+    await page.evaluate(() => sessionStorage.removeItem("pip-intro-seen"));
+    await page.goto("/?intro=0");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(intro(page)).toBeHidden();
+  });
+
+  test.describe("reduced motion", () => {
+    test.use({ reducedMotion: "reduce" });
+    test("shows a calm still frame with the button ready straight away", async ({ page }) => {
+      await page.goto("/");
+      await expect(intro(page)).toBeVisible();
+      await expect(page.getByRole("button", { name: /Enter the Dream Workshop/ })).toBeVisible({ timeout: 1000 });
+      const anims = await page.evaluate(() => document.querySelector(".intro")!.getAnimations({ subtree: true }).filter((a) => a.playState === "running").length);
+      expect(anims).toBe(0);
+      await page.getByRole("button", { name: /Enter the Dream Workshop/ }).click();
+      await expect(intro(page)).toBeHidden({ timeout: 1000 });
+    });
   });
 });

@@ -9,6 +9,7 @@ import EasterEgg from "@/components/EasterEgg";
 import StatsStrip from "@/components/StatsStrip";
 import PipHero from "@/components/PipHero";
 import VisitorCounter from "@/components/VisitorCounter";
+import { ReplayIntro } from "@/components/Intro";
 
 const FACTS: [string, string][] = [
   ["Species", "Skull baby"], ["Profession", "Junior Dream Engineer"], ["Home", "Midnight Nursery"],
@@ -136,7 +137,7 @@ export default function Home() {
           <a className="brand" href="#top">pip ✦</a>
           <p style={{ margin: "12px 0" }}>Made with my hands and enormous yawns. Sweet dreams.</p>
           <div className="badges" aria-label="Retro web badges">
-            <span className="badge">best viewed in dreamland</span><span className="badge">made with ♥ + Next.js</span><span className="badge">no cookies for you</span><ChaosToggle />
+            <span className="badge">best viewed in dreamland</span><span className="badge">made with ♥ + Next.js</span><span className="badge">no cookies for you</span><ChaosToggle /><ReplayIntro />
           </div>
           <VisitorCounter />
           <p>Character &amp; artwork: haX.baby Track 1 official asset pack.</p>

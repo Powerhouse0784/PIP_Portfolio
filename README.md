@@ -44,6 +44,7 @@ Sound is off until the visitor opts in (top-bar ♪ or pressing Play in the Lull
 - **AI Pip**: see above. Optional voice toggle in the chat uses the browser's speech synthesis (off by default).
 
 ## Little extras
+- **Cinematic intro** (`components/Intro.tsx`): on a first visit in a tab, a starry-sky scene with a three-layer parallax sky, drifting clouds, a swaying glowing lantern and Pip rising into an arched window, then **Enter the Dream Workshop** (or **Enter with sound ♪**). **Skip intro** and `Esc` leave at once; reduced motion gets a calm still frame. Pure CSS/SVG (no new libraries or images), shown once per tab session, skipped for `#deep-links` and `?intro=0`; the footer has **Replay the intro**.
 - **Jump menu** (`✦ Jump` button or the `/` key): go to any section, toggle themes, or run the secret command.
 - **Pip's speech bubble**: reacts to theme, sound, chaos mode, pokes, toys and the guestbook; dozes off after 45 s idle; the tab title waits for you.
 - **Share cards**: the block tower and growth chart render a 1080x1350 PNG on a canvas (native share sheet on phones, download elsewhere).
