@@ -30,4 +30,3 @@ Push to GitHub, import in Vercel, add the two env vars, deploy. Test the live UR
 - Replace the in-memory rate limiter in `api/guestbook/route.ts` with a durable one (Upstash / Vercel KV).
 - Consider moderation (set `is_approved` default to false and approve in Supabase).
 - Keep the asset credit in the footer.
-# PIP_Portfolio
