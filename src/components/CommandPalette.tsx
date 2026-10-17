@@ -9,6 +9,9 @@ const press = (act: string) => () => document.querySelector<HTMLElement>(`[data-
 const CMDS: Cmd[] = [
   { id: "about", label: "Meet Pip", hint: "Go to", keys: "about intro facts", run: go("about") },
   { id: "projects", label: "Things Pip dreamed up", hint: "Go to", keys: "projects lullaby lantern route", run: go("projects") },
+  { id: "storybook", label: "Bedtime storybook", hint: "Go to", keys: "story book pages bedtime read", run: go("storybook") },
+  { id: "toys", label: "Rattle & block toys", hint: "Play", keys: "toys blocks tower rattle stack", run: go("toys") },
+  { id: "growth", label: "Pip’s growth chart", hint: "Go to", keys: "growth chart height skills wall", run: go("growth") },
   { id: "dream", label: "Make me a dream", hint: "Go to", keys: "dream maker story generate", run: go("dreammaker") },
   { id: "story", label: "How Pip became a dream engineer", hint: "Go to", keys: "story origin scenes", run: go("story") },
   { id: "guestbook", label: "Sign the guestbook", hint: "Go to", keys: "guestbook note message", run: go("guestbook") },
@@ -33,7 +36,11 @@ export default function CommandPalette() {
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setOpen((o) => !o); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setOpen((o) => !o); return; }
+      // "/" opens the menu from anywhere except while typing.
+      const t = e.target as HTMLElement | null;
+      const typing = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+      if (e.key === "/" && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setOpen(true); }
     };
     const show = () => setOpen(true);
     addEventListener("keydown", key);
@@ -53,12 +60,12 @@ export default function CommandPalette() {
 
   return (
     <div className="pal-bg" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
-      <div className="pal" role="dialog" aria-modal="true" aria-label="Command menu">
+      <div className="pal" role="dialog" aria-modal="true" aria-label="Jump menu">
         <input
           ref={input}
           value={q}
-          placeholder="Type a command… (try “secret”)"
-          aria-label="Search commands"
+          placeholder="Where to? (try “secret”)"
+          aria-label="Where do you want to jump?"
           onChange={(e) => { setQ(e.target.value); setI(0); }}
           onKeyDown={(e) => {
             if (e.key === "Escape") setOpen(false);
@@ -75,7 +82,7 @@ export default function CommandPalette() {
           ))}
           {!list.length && <li className="none">No match. Pip is still looking…</li>}
         </ul>
-        <p className="small">↑ ↓ to move · Enter to run · Esc to close</p>
+        <p className="small">↑ ↓ to move · Enter to go · Esc to close · press / anywhere</p>
       </div>
     </div>
   );

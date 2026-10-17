@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Star } from "./Icons";
+import { say } from "@/lib/pipSay";
 
 const IDLE = "psst… the smallest star is shy. Poke it five times.";
 
@@ -38,7 +39,7 @@ export default function EasterEgg() {
 
   const poke = () => {
     const n = count + 1;
-    if (n < 5) return setCount(n);
+    if (n < 5) { say(["Hehe!", "That tickles!", "Almost… shh.", "One more poke!"][n - 1]); return setCount(n); }
     setCount(0);
     confetti();
     dlg.current?.showModal();

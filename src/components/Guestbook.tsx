@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
+import { say } from "@/lib/pipSay";
 
 type Entry = { id: number; display_name: string; message: string; created_at: string };
 type Status = "idle" | "sending" | "ok" | "error";
@@ -13,7 +14,7 @@ export default function Guestbook() {
   useEffect(() => {
     fetch("/api/guestbook")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { entries: Entry[] }) => setEntries(d.entries))
+      .then((d: { entries: Entry[]; unavailable?: boolean }) => { setEntries(d.entries); if (d.unavailable) setLoadError(true); })
       .catch(() => { setLoadError(true); setEntries([]); });
   }, []);
 
@@ -29,12 +30,13 @@ export default function Guestbook() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: fd.get("name"), message: fd.get("message"), website: fd.get("website") || undefined }),
       });
-      const data = (await res.json()) as { entry?: Entry; error?: string };
+      const data = (await res.json()) as { entry?: Entry; error?: string; pending?: boolean };
       if (!res.ok) throw new Error(data.error ?? "Something went wrong.");
       if (data.entry) setEntries((cur) => [data.entry as Entry, ...(cur ?? [])]);
       form.reset();
+      say(data.pending ? "A note! I’ll pin it up soon." : "A new note! Pinned it up.");
       setStatus("ok");
-      setMsg("Thank you! Pip tucked your note into the guestbook.");
+      setMsg(data.pending ? "Thank you! Pip will read your note and pin it up soon." : "Thank you! Pip tucked your note into the guestbook.");
     } catch (err) {
       setStatus("error");
       setMsg(err instanceof Error ? err.message : "Something went wrong.");

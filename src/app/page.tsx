@@ -1,15 +1,12 @@
+import { LazyCatcher, LazyDarkRoom, LazyDreamMaker, LazyStorybook, LazyToys, LazyGrowthChart, LazyGuestbook } from "@/components/Lazy";
 import LullabyLab from "@/components/LullabyLab";
 import Lanterns from "@/components/Lanterns";
 import DeliveryRoute from "@/components/DeliveryRoute";
-import Catcher from "@/components/Catcher";
-import DarkRoom from "@/components/DarkRoom";
 import Greeting from "@/components/Greeting";
 import ChaosToggle from "@/components/ChaosToggle";
-import DreamMaker from "@/components/DreamMaker";
 import Story from "@/components/Story";
 import EasterEgg from "@/components/EasterEgg";
 import PipHero from "@/components/PipHero";
-import Guestbook from "@/components/Guestbook";
 import VisitorCounter from "@/components/VisitorCounter";
 
 const FACTS: [string, string][] = [
@@ -79,7 +76,7 @@ export default function Home() {
             <Lanterns />
           </article>
 
-          <article className="proj" aria-labelledby="p3" style={{ gridTemplateColumns: "1fr" }}>
+          <article className="proj wide" id="routes" aria-labelledby="p3">
             <div>
               <span className="num">03</span>
               <h3 id="p3">Dream Delivery Routes</h3>
@@ -87,14 +84,41 @@ export default function Home() {
             </div>
             <DeliveryRoute />
           </article>
+
+          <article className="proj wide" id="storybook" aria-labelledby="p4">
+            <div>
+              <span className="num">04</span>
+              <h3 id="p4">Bedtime Storybook</h3>
+              <p>“Goodnight, Midnight Nursery.” Turn the pages with the buttons, arrow keys, or a swipe.</p>
+            </div>
+            <LazyStorybook />
+          </article>
+
+          <article className="proj wide" id="toys" aria-labelledby="p5">
+            <div>
+              <span className="num">05</span>
+              <h3 id="p5">Rattle &amp; Block Toys</h3>
+              <p>Two toys from Pip’s workbench: a tower that wobbles if you’re careless, and a rattle that likes to be shaken.</p>
+            </div>
+            <LazyToys />
+          </article>
+
+          <article className="proj wide" id="growth" aria-labelledby="p6">
+            <div>
+              <span className="num">06</span>
+              <h3 id="p6">Pip’s Growth Chart</h3>
+              <p>Every skill is a pencil mark on the nursery wall. Tap a mark and watch Pip grow up to it.</p>
+            </div>
+            <LazyGrowthChart />
+          </article>
         </div>
       </section>
 
-      <Catcher />
-      <DarkRoom />
-      <DreamMaker />
+      <LazyCatcher />
+      <LazyDarkRoom />
+      <LazyDreamMaker />
       <Story />
-      <Guestbook />
+      <LazyGuestbook />
 
       <footer>
         <div className="wrap">

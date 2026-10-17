@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdmin } from "@/lib/supabaseAdmin";
+import { checkLimit, visitorKey } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,19 +14,25 @@ const schema = z
   })
   .strict();
 
-// Best-effort per-instance limiter. For real protection use Upstash/Vercel KV or edge rate limiting.
-const last = new Map<string, number>();
+// Links are the #1 guestbook spam vector and this is a cozy wall, so no links.
+const LINK = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|ru|xyz|top|biz|info|me|co)\b)/i;
+
+// GUESTBOOK_MODERATION=pending -> new notes wait for approval (flip is_approved in Supabase).
+const MODERATED = process.env.GUESTBOOK_MODERATION === "pending";
 
 export async function GET() {
   const db = getAdmin();
-  if (!db) return NextResponse.json({ error: "Guestbook is sleeping." }, { status: 503 });
+  if (!db) return NextResponse.json({ entries: [], unavailable: true });
   const { data, error } = await db
     .from("guestbook_entries")
     .select("id, display_name, message, created_at")
     .eq("is_approved", true)
     .order("created_at", { ascending: false })
     .limit(30);
-  if (error) return NextResponse.json({ error: "Could not load entries" }, { status: 500 });
+  if (error) {
+    console.error("[guestbook:get]", error.code, error.message);
+    return NextResponse.json({ entries: [], unavailable: true }); // 200 keeps the browser console clean
+  }
   return NextResponse.json({ entries: data ?? [] });
 }
 
@@ -33,30 +40,35 @@ export async function POST(request: Request) {
   const db = getAdmin();
   if (!db) return NextResponse.json({ error: "Guestbook is sleeping." }, { status: 503 });
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
-  const now = Date.now();
-  if (now - (last.get(ip) ?? 0) < 10_000) {
-    return NextResponse.json({ error: "Slow down a little, sleepyhead." }, { status: 429 });
-  }
-  last.set(ip, now);
-
+  const raw = await request.text();
+  if (raw.length > 2000) return NextResponse.json({ error: "That note is too big." }, { status: 413 });
   let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  try { body = JSON.parse(raw); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+
   const parsed = schema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Please check your name and message." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "Please check your name and message." }, { status: 400 });
+  if (parsed.data.website) return NextResponse.json({ ok: true, pending: true }, { status: 202 }); // bot: pretend success
+  if (LINK.test(parsed.data.name) || LINK.test(parsed.data.message)) {
+    return NextResponse.json({ error: "No links in the nursery, please. Just kind words!" }, { status: 400 });
   }
-  if (parsed.data.website) return NextResponse.json({ ok: true }, { status: 201 }); // bot: pretend success
+
+  const verdict = await checkLimit(visitorKey(request));
+  if (!verdict.ok) {
+    return NextResponse.json(
+      { error: verdict.reason === "cooldown" ? "Slow down a little, sleepyhead." : "That's plenty of notes for one hour. Come back later!" },
+      { status: 429, headers: { "Retry-After": verdict.reason === "cooldown" ? "20" : "3600" } },
+    );
+  }
 
   const { data, error } = await db
     .from("guestbook_entries")
-    .insert({ display_name: parsed.data.name, message: parsed.data.message, is_approved: true })
+    .insert({ display_name: parsed.data.name, message: parsed.data.message, is_approved: !MODERATED })
     .select("id, display_name, message, created_at")
     .single();
-  if (error) return NextResponse.json({ error: "Could not save your note." }, { status: 500 });
+  if (error) {
+    console.error("[guestbook:post]", error.code, error.message);
+    return NextResponse.json({ error: "Could not save your note." }, { status: 500 });
+  }
+  if (MODERATED) return NextResponse.json({ ok: true, pending: true }, { status: 202 });
   return NextResponse.json({ entry: data }, { status: 201 });
 }

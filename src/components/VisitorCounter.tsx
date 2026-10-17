@@ -9,10 +9,15 @@ export default function VisitorCounter() {
     if (ran.current) return; // React Strict Mode runs effects twice in dev
     ran.current = true;
     let counted = false;
-    try { counted = sessionStorage.getItem("pip-visit") === "1"; sessionStorage.setItem("pip-visit", "1"); } catch {}
+    try { counted = sessionStorage.getItem("pip-visit") === "1"; } catch {}
     fetch("/api/visits", { method: counted ? "GET" : "POST" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { count?: number } | null) => d?.count != null && setCount(Number(d.count)))
+      .then((d: { count?: number | null } | null) => {
+        if (d?.count == null) return;
+        setCount(Number(d.count));
+        // Only remember the visit once it was really counted, so a failed POST is retried next load.
+        if (!counted) { try { sessionStorage.setItem("pip-visit", "1"); } catch {} }
+      })
       .catch(() => {});
   }, []);
 

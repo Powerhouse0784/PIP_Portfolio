@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { useAudio } from "./Providers";
+import { pick, say } from "@/lib/pipSay";
 
 /** Glint centres in the 620x931 hero art, as % of its width/height. The art itself has no eye lights. */
 const EYES = [{ x: 41.9, y: 43.4 }, { x: 64.4, y: 39.1 }];
@@ -53,6 +54,7 @@ export default function PipHero({ src, alt }: { src: string; alt: string }) {
     void el.offsetWidth;
     el.classList.add("giggle");
     blip(784);
+    say(pick(["*giggle*", "Hehe, hi!", "Boop received.", "My nightcap is crooked, isn’t it?"]));
   };
 
   return (
