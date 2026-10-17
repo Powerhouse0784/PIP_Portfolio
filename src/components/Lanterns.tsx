@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useAudio } from "./Providers";
 import Receipt from "./Receipt";
 import { nextReceipt, type R } from "@/lib/receipt";
 
@@ -10,6 +11,7 @@ const LAMPS = [
 ];
 
 export default function Lanterns() {
+  const { play } = useAudio();
   const [sel, setSel] = useState(0);
   const [rec, setRec] = useState<R | null>(null);
   return (
@@ -27,7 +29,7 @@ export default function Lanterns() {
             key={l.name}
             className="lan"
             aria-pressed={sel === i}
-            onClick={() => { setSel(i); setRec(nextReceipt(`Delivered: ${l.name.toLowerCase()} glow.`)); }}
+            onClick={() => { setSel(i); play("chime"); setRec(nextReceipt(`Delivered: ${l.name.toLowerCase()} glow.`)); }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/lamp.webp" alt="" loading="lazy" />

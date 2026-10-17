@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useAudio } from "./Providers";
 
 const IDLE_MS = 45_000;
 
@@ -8,6 +9,9 @@ const IDLE_MS = 45_000;
  * Extras: Pip dozes off when you go quiet, and the tab title waits for you while you're away.
  */
 export default function PipReactions() {
+  const { play, stop } = useAudio();
+  const audioRef = useRef({ play, stop });
+  audioRef.current = { play, stop };
   const [text, setText] = useState("");
   const [n, setN] = useState(0);
   const hide = useRef<number>(0);
@@ -23,8 +27,8 @@ export default function PipReactions() {
     let idle = 0, asleep = false;
     const arm = () => {
       clearTimeout(idle);
-      if (asleep) { asleep = false; show("*yawn* Oh! You’re back. I wasn’t sleeping. Much."); }
-      idle = window.setTimeout(() => { asleep = true; show("zzz… Pip dozed off. Poke me?", 6500); }, IDLE_MS);
+      if (asleep) { asleep = false; audioRef.current.stop("sleepy"); show("*yawn* Oh! You’re back. I wasn’t sleeping. Much."); }
+      idle = window.setTimeout(() => { asleep = true; audioRef.current.play("sleepy"); show("zzz… Pip dozed off. Poke me?", 6500); }, IDLE_MS);
     };
 
     let orig = document.title, hiddenAt = 0;
@@ -37,7 +41,7 @@ export default function PipReactions() {
     document.addEventListener("visibilitychange", vis);
     const events = ["pointerdown", "keydown", "scroll", "touchstart"] as const;
     events.forEach((ev) => addEventListener(ev, arm, { passive: true }));
-    idle = window.setTimeout(() => { asleep = true; show("zzz… Pip dozed off. Poke me?", 6500); }, IDLE_MS);
+    idle = window.setTimeout(() => { asleep = true; audioRef.current.play("sleepy"); show("zzz… Pip dozed off. Poke me?", 6500); }, IDLE_MS);
     return () => {
       removeEventListener("pip:say", onSay);
       document.removeEventListener("visibilitychange", vis);

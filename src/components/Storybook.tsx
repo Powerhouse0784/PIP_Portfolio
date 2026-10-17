@@ -66,7 +66,7 @@ const PAGES: Page[] = [
 const N = PAGES.length;
 
 export default function Storybook() {
-  const { on, ensure, noise } = useAudio();
+  const { play } = useAudio();
   const [spread, setSpread] = useState(true);
   const [t, setT] = useState(0); // number of leaves turned
   const [moving, setMoving] = useState(-1);
@@ -97,10 +97,10 @@ export default function Storybook() {
     setMoving(next > t ? t : t - 1);
     clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setMoving(-1), 950);
-    if (on) { ensure(); noise(2600, 0.22, 0.09); noise(1500, 0.18, 0.05, 0.12); }
+    play("page");
     setT(next);
     if (next === maxT) setRec(nextReceipt(`Delivered: one bedtime story, ${N - 2} pages.`));
-  }, [maxT, t, on, ensure, noise]);
+  }, [maxT, t, play]);
 
   const onKey = (e: KeyboardEvent) => {
     if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); go(t + 1); }

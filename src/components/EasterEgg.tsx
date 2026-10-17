@@ -2,13 +2,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Star } from "./Icons";
 import { say } from "@/lib/pipSay";
+import { useAudio } from "./Providers";
 
 const IDLE = "psst… the smallest star is shy. Poke it five times.";
 
 export default function EasterEgg() {
+  const { play } = useAudio();
   const [count, setCount] = useState(0);
   const dlg = useRef<HTMLDialogElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
+
+  /** The star-sparkle from the audio pack, only if the visitor turned sound on. */
+  const chime = () => play("sparkle");
 
   const confetti = () => {
     const c = cv.current;
@@ -32,7 +37,7 @@ export default function EasterEgg() {
   };
 
   useEffect(() => {
-    const h = () => { confetti(); dlg.current?.showModal(); };
+    const h = () => { confetti(); chime(); dlg.current?.showModal(); };
     addEventListener("pip:egg", h);
     return () => removeEventListener("pip:egg", h);
   });
@@ -42,6 +47,7 @@ export default function EasterEgg() {
     if (n < 5) { say(["Hehe!", "That tickles!", "Almost… shh.", "One more poke!"][n - 1]); return setCount(n); }
     setCount(0);
     confetti();
+    chime();
     dlg.current?.showModal();
   };
 

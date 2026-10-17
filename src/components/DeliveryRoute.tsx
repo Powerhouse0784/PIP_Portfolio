@@ -1,4 +1,5 @@
 "use client";
+import { useAudio } from "./Providers";
 import { useEffect, useRef, useState } from "react";
 import Receipt from "./Receipt";
 import { nextReceipt, type R } from "@/lib/receipt";
@@ -18,6 +19,7 @@ const clamp = (n: number) => Math.min(1, Math.max(0, n));
  * Reduced motion: the route is drawn in full and the houses are simply clickable.
  */
 export default function DeliveryRoute() {
+  const { play } = useAudio();
   const [sel, setSel] = useState(-1);
   const [reached, setReached] = useState(0);
   const [rec, setRec] = useState<R | null>(null);
@@ -67,7 +69,7 @@ export default function DeliveryRoute() {
     return () => { removeEventListener("scroll", onScroll); removeEventListener("resize", onScroll); cancelAnimationFrame(raf); };
   }, []);
 
-  const pick = (i: number) => { setSel(i); setRec(nextReceipt(`Delivered to ${HOUSES[i].name}.`)); };
+  const pick = (i: number) => { play("delivery"); setSel(i); setRec(nextReceipt(`Delivered to ${HOUSES[i].name}.`)); };
 
   return (
     <div className="rt">

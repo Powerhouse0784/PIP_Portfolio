@@ -1,17 +1,19 @@
 import { createHash } from "node:crypto";
 
 /**
- * Durable rate limiting for the guestbook.
+ * Durable rate limiting shared by the guestbook and the AI routes.
  * - With UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN: shared across all Vercel instances.
  * - Without them: falls back to a per-instance Map (fine locally, weak in production).
- * Limits: one note per COOLDOWN seconds, MAX_PER_HOUR per visitor. IPs are salted and hashed, never stored raw.
+ * IPs are salted and hashed, never stored raw.
  */
-const COOLDOWN = 20;
-const MAX_PER_HOUR = 5;
-
 const url = process.env.UPSTASH_REDIS_REST_URL;
 const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 export const durableLimiter = Boolean(url && token);
+
+export type Policy = { name: string; cooldown: number; perHour: number };
+export const GUESTBOOK: Policy = { name: "gb", cooldown: 20, perHour: 5 };
+export const CHAT: Policy = { name: "chat", cooldown: 2, perHour: 40 };
+export const DREAM: Policy = { name: "dream", cooldown: 6, perHour: 12 };
 
 const mem = new Map<string, { last: number; hits: number[] }>();
 
@@ -34,27 +36,29 @@ async function upstash(commands: (string | number)[][]) {
   return (await res.json()) as { result: unknown }[];
 }
 
-export async function checkLimit(key: string): Promise<Verdict> {
+export async function checkLimit(key: string, policy: Policy = GUESTBOOK): Promise<Verdict> {
+  const { name, cooldown, perHour } = policy;
   if (durableLimiter) {
     try {
       const [cool, hits] = await upstash([
-        ["SET", `gb:cool:${key}`, "1", "EX", COOLDOWN, "NX"],
-        ["INCR", `gb:hour:${key}`],
-        ["EXPIRE", `gb:hour:${key}`, 3600, "NX"],
+        ["SET", `${name}:cool:${key}`, "1", "EX", cooldown, "NX"],
+        ["INCR", `${name}:hour:${key}`],
+        ["EXPIRE", `${name}:hour:${key}`, 3600, "NX"],
       ]);
       if (cool.result !== "OK") return { ok: false, reason: "cooldown" };
-      if (Number(hits.result) > MAX_PER_HOUR) return { ok: false, reason: "hourly" };
+      if (Number(hits.result) > perHour) return { ok: false, reason: "hourly" };
       return { ok: true };
     } catch (e) {
-      console.error("[guestbook] limiter unavailable, falling back to memory:", e);
+      console.error(`[${name}] limiter unavailable, falling back to memory:`, e);
     }
   }
+  const mk = `${name}:${key}`;
   const now = Date.now();
-  const s = mem.get(key) ?? { last: 0, hits: [] };
+  const s = mem.get(mk) ?? { last: 0, hits: [] };
   s.hits = s.hits.filter((t) => now - t < 3_600_000);
-  if (now - s.last < COOLDOWN * 1000) return { ok: false, reason: "cooldown" };
-  if (s.hits.length >= MAX_PER_HOUR) return { ok: false, reason: "hourly" };
-  s.last = now; s.hits.push(now); mem.set(key, s);
+  if (now - s.last < cooldown * 1000) return { ok: false, reason: "cooldown" };
+  if (s.hits.length >= perHour) return { ok: false, reason: "hourly" };
+  s.last = now; s.hits.push(now); mem.set(mk, s);
   if (mem.size > 5000) mem.clear();
   return { ok: true };
 }

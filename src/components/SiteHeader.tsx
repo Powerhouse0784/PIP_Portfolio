@@ -11,7 +11,7 @@ const MORE: [string, string][] = [
 ];
 
 export default function SiteHeader() {
-  const { on, setOn, ensure } = useAudio();
+  const { on, setOn, ensure, play } = useAudio();
   const [night, setNight] = useState(false);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("");
@@ -54,6 +54,7 @@ export default function SiteHeader() {
     setNight(next);
     document.documentElement.dataset.theme = next ? "night" : "day";
     try { localStorage.setItem("pip-theme", next ? "night" : "day"); } catch {}
+    play("chime");
     say(next ? "Goodnight! Stars out, lanterns on." : "Good morning! *yawn* Is it breakfast yet?");
   };
   const toggleSound = () => {

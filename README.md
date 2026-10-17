@@ -17,6 +17,13 @@ npm run dev                  # http://localhost:3000
 The service-role key is server-only. Never prefix it with `NEXT_PUBLIC_` and never commit `.env.local`.
 Without these variables the site still works; the guestbook shows "sleeping" and the counter is hidden.
 
+## Make Pip talk back (optional, free API keys)
+Add either or both to `.env.local` and to Vercel (Production), then redeploy:
+- `GEMINI_API_KEY` from aistudio.google.com/apikey (tried first)
+- `GROQ_API_KEY` from console.groq.com/keys (used if Gemini fails or is unset)
+
+With a key, the chat bubble answers in Pip's voice (and can offer a "Take me to the toys" jump link) and the Dream Maker writes a fresh dream each time. Without keys, or if a provider is down or rate-limited, both quietly fall back to the hand-written rules and recipe book. Keys are server-only; `/api/chat` and `/api/dream` validate input with zod, cap lengths, rate-limit per visitor (Upstash if configured) and only allow a whitelist of section ids in jump links.
+
 ## Tests
 ```bash
 npm install
@@ -29,10 +36,20 @@ Covers: console errors, sideways scroll, theme and mute toggles, the five-poke s
 ## Deploy
 Push to GitHub, import in Vercel, add the two env vars, deploy. Test the live URL on a phone.
 
+## Audio
+Sound is off until the visitor opts in (top-bar ♪ or pressing Play in the Lullaby Lab). Files live in `public/audio/` (ambience loop as WAV, one-shots as MP3). Ambience loops quietly and ducks while a lullaby plays; sfx replace each other so nothing piles up; muting fades everything out; the ambience pauses when the tab is hidden. Mapping: lullaby = Sleepy mood, chime = day/night and lanterns, delivery = route houses, page = storybook, toy = blocks and rattle, sparkle = Easter egg and all nine 3D stars, sleepy = Pip dozing off after 45 s idle. Pitched game blips still use Web Audio.
+
+## Tier 3 extras
+- **3D Dream Mobile** (`#mobile3d`): a Three.js scene with Pip's official art in an arched window and nine orbiting 3D stars, a crescent moon and a cloud. Drag or use the Turn buttons, tap a star (or "Ring a star") for a pentatonic chime. Lazy-loaded (three.js stays out of the first load), pauses off-screen and in hidden tabs, theme-aware, and falls back to the flat art if WebGL is unavailable.
+- **AI Pip**: see above. Optional voice toggle in the chat uses the browser's speech synthesis (off by default).
+
 ## Little extras
 - **Jump menu** (`✦ Jump` button or the `/` key): go to any section, toggle themes, or run the secret command.
 - **Pip's speech bubble**: reacts to theme, sound, chaos mode, pokes, toys and the guestbook; dozes off after 45 s idle; the tab title waits for you.
 - **Share cards**: the block tower and growth chart render a 1080x1350 PNG on a canvas (native share sheet on phones, download elsewhere).
+- **Sleeping Pip**: at night Pip dozes (dim eyes, breathing, floating z's). Tap or press Enter on him to wake him for 9 seconds.
+- **Atmosphere**: drifting clouds, orbiting stars, theme-aware colour washes and scalloped cloud edges on the Projects and Guestbook bands.
+- **Stats strip + odometer**: "Dreams delivered" grows with every receipt you collect (stored in this browser only); the footer odometer shows the real shared visit count.
 - **Star-wand cursor** for mouse users only (CSS, no JS).
 
 ## Structure

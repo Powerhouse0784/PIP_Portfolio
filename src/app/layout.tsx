@@ -24,8 +24,8 @@ export const metadata: Metadata = {
   title: { default: "Pip’s Dream Workshop", template: "%s · Pip’s Dream Workshop" },
   description: DESC,
   applicationName: "Pip’s Dream Workshop",
-  openGraph: { title: "Pip’s Dream Workshop", description: DESC, type: "website", images: [{ url: "/images/hero.webp", alt: "Pip, a gentle skull baby in a star nightcap, on a cloud" }] },
-  twitter: { card: "summary_large_image", title: "Pip’s Dream Workshop", description: DESC, images: ["/images/hero.webp"] },
+  openGraph: { title: "Pip’s Dream Workshop", description: DESC, type: "website", images: [{ url: "/images/og.png", width: 1200, height: 630, alt: "Pip’s Dream Workshop: Pip, a gentle skull baby in a star nightcap, on a cloud" }] },
+  twitter: { card: "summary_large_image", title: "Pip’s Dream Workshop", description: DESC, images: ["/images/og.png"] },
 };
 export const viewport: Viewport = {
   width: "device-width", initialScale: 1, viewportFit: "cover",

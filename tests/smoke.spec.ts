@@ -95,6 +95,37 @@ test.describe("controls", () => {
   });
 });
 
+test.describe("atmosphere", () => {
+  test("Pip falls asleep at night and wakes when poked", async ({ page }) => {
+    await page.goto("/");
+    const pip = page.getByRole("button", { name: /^Pip\. Press to make him giggle/ });
+    await expect(pip).toHaveAttribute("data-sleep", "false");
+    await page.getByRole("button", { name: "Switch to night mode" }).click();
+    const sleeping = page.getByRole("button", { name: /^Pip is sleeping/ });
+    await expect(sleeping).toHaveAttribute("data-sleep", "true");
+    await sleeping.click();
+    await expect(page.getByRole("button", { name: /^Pip\. Press to make him giggle/ })).toBeVisible();
+    await expect(page.locator(".pipsay")).toContainText(/I’m up/);
+  });
+
+  test("hero stats count up and the footer odometer renders", async ({ page }) => {
+    await page.route("**/api/visits", (route) => route.fulfill({ json: { count: 1234 } }));
+    await page.goto("/");
+    await page.locator(".stats").scrollIntoViewIfNeeded();
+    await expect(page.getByText("Dreams delivered")).toBeVisible();
+    await expect(page.locator(".stat dd").first()).toContainText("1,248+");
+    await page.locator("footer").scrollIntoViewIfNeeded();
+    await expect(page.getByRole("img", { name: "Nursery visits: 1,234" })).toBeVisible();
+  });
+
+  test("a collected receipt adds to Dreams delivered", async ({ page }) => {
+    await page.goto("/");
+    await page.locator(".stats").scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.dispatchEvent(new Event("pip:delivered")));
+    await expect(page.locator(".stat dd").first()).toContainText("1,249+");
+  });
+});
+
 test.describe("easter egg", () => {
   test("five pokes on the smallest star reveal the constellation", async ({ page }) => {
     await page.goto("/");
@@ -173,5 +204,71 @@ test.describe("lullaby lab", () => {
     await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
     await page.getByRole("button", { name: "Stop" }).click();
     await expect(page.getByRole("button", { name: "Play lullaby" })).toBeVisible();
+  });
+});
+
+test.describe("Pip chat (AI with a hand-written fallback)", () => {
+  test("uses the AI reply and offers a jump link when the API answers", async ({ page }) => {
+    await page.route("**/api/chat", (route) => route.fulfill({ json: { reply: "*giggle* Toys are my favourite!", go: "toys" } }));
+    await page.goto("/");
+    await page.getByRole("button", { name: "Chat with Pip" }).click();
+    await page.getByLabel("Message to Pip").fill("what can I play with?");
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(page.getByText("Toys are my favourite!")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Take me to the toys/ })).toBeVisible();
+  });
+
+  test("falls back to the rule book when the API is asleep", async ({ page }) => {
+    await page.route("**/api/chat", (route) => route.fulfill({ json: { unavailable: true } }));
+    await page.goto("/");
+    await page.getByRole("button", { name: "Chat with Pip" }).click();
+    await page.getByRole("button", { name: "What do you do?" }).click();
+    await expect(page.getByText(/dreams, lullabies, nightlights and bedtime stories/)).toBeVisible();
+  });
+
+  test("falls back when the network call fails", async ({ page }) => {
+    await page.route("**/api/chat", (route) => route.abort());
+    await page.goto("/");
+    await page.getByRole("button", { name: "Chat with Pip" }).click();
+    await page.getByLabel("Message to Pip").fill("hello");
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(page.getByText(/Hello, sleepyhead/)).toBeVisible();
+  });
+});
+
+test.describe("dream maker", () => {
+  test("shows the AI dream, or the recipe book when the API is unavailable", async ({ page }) => {
+    await page.route("**/api/dream", (route) => route.fulfill({ json: { title: "Moonlit Pillow Fort", text: "Tonight, Mia floats to a fort of warm clouds and a tiny star waves hello. Sweet dreams. — Pip ✦" } }));
+    await page.goto("/");
+    await reveal(page, "dreammaker");
+    await page.getByLabel("Who is dreaming tonight?").fill("Mia");
+    await page.getByRole("button", { name: /Build my dream/ }).click();
+    await expect(page.getByRole("heading", { name: "Moonlit Pillow Fort" })).toBeVisible();
+    await page.unroute("**/api/dream");
+    await page.route("**/api/dream", (route) => route.fulfill({ json: { unavailable: true } }));
+    await page.getByRole("button", { name: /Dream another one/ }).click();
+    await expect(page.getByText("Made from Pip’s recipe book.")).toBeVisible();
+  });
+});
+
+test.describe("3D dream mobile", () => {
+  test("renders (or falls back cleanly), rings stars with the buttons, no console errors", async ({ page }) => {
+    const errors = watchErrors(page);
+    await page.goto("/");
+    await reveal(page, "mobile3d");
+    await expect(page.getByRole("heading", { name: "Pip’s Dream Mobile" })).toBeVisible();
+    const canvas = page.locator("#mobile3d canvas.gl");
+    const fallback = page.locator("#mobile3d .m3-fallback");
+    await expect(canvas.or(fallback)).toBeVisible();
+    if (await canvas.count()) {
+      await page.getByRole("button", { name: "Ring a star ✦" }).click();
+      await expect(page.getByText("Stars rung: 1 of 9")).toBeVisible();
+      await page.getByRole("button", { name: "Turn the scene right" }).click();
+      await page.getByRole("button", { name: "Hold still" }).click();
+      await expect(page.getByRole("button", { name: "Let it drift" })).toHaveAttribute("aria-pressed", "true");
+    }
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+    expect(errors).toEqual([]);
   });
 });

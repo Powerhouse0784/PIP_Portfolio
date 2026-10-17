@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Odometer from "./Odometer";
 
 export default function VisitorCounter() {
   const [count, setCount] = useState<number | null>(null);
@@ -22,5 +23,11 @@ export default function VisitorCounter() {
   }, []);
 
   if (count === null) return null;
-  return <p>Nursery visits: <strong>{count.toLocaleString()}</strong> (one per browsing session)</p>;
+  return (
+    <div className="visits">
+      <span className="small">Nursery visitors</span>
+      <Odometer value={count} label={`Nursery visits: ${count.toLocaleString()}`} />
+      <span className="small">one per browsing session</span>
+    </div>
+  );
 }

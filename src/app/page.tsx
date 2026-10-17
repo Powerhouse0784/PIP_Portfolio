@@ -1,4 +1,4 @@
-import { LazyCatcher, LazyDarkRoom, LazyDreamMaker, LazyStorybook, LazyToys, LazyGrowthChart, LazyGuestbook } from "@/components/Lazy";
+import { LazyCatcher, LazyDarkRoom, LazyDreamMaker, LazyDreamMobile, LazyStorybook, LazyToys, LazyGrowthChart, LazyGuestbook } from "@/components/Lazy";
 import LullabyLab from "@/components/LullabyLab";
 import Lanterns from "@/components/Lanterns";
 import DeliveryRoute from "@/components/DeliveryRoute";
@@ -6,6 +6,7 @@ import Greeting from "@/components/Greeting";
 import ChaosToggle from "@/components/ChaosToggle";
 import Story from "@/components/Story";
 import EasterEgg from "@/components/EasterEgg";
+import StatsStrip from "@/components/StatsStrip";
 import PipHero from "@/components/PipHero";
 import VisitorCounter from "@/components/VisitorCounter";
 
@@ -17,6 +18,12 @@ const FACTS: [string, string][] = [
 export default function Home() {
   return (
     <main id="top">
+      <div className="hero-zone">
+        <div className="clouds" aria-hidden="true">
+          {[1, 2, 3, 4].map((n) => (
+            <svg key={n} className={`cl c${n}`} viewBox="0 -6 200 86"><g fill="currentColor"><rect x="20" y="40" width="160" height="30" rx="15" /><circle cx="70" cy="40" r="28" /><circle cx="110" cy="32" r="34" /><circle cx="150" cy="46" r="22" /></g></svg>
+          ))}
+        </div>
       <div className="wrap">
         <div className="hero">
           <div>
@@ -24,9 +31,11 @@ export default function Home() {
             <h1>I build the <span className="grad">dreams</span> you fall asleep inside.</h1>
             <p className="lede">Hello, sleepyhead! I’m Pip, a tiny dream engineer with big ideas and a very important bedtime job.</p>
             <a className="btn" href="#projects">Explore my little world →</a>
+            <StatsStrip />
             <Greeting />
           </div>
           <div style={{ position: "relative" }}>
+            <div className="orbit" aria-hidden="true"><i>✦</i><i>✧</i><i>✦</i></div>
             <svg className="moon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" /></svg>
             <div className="arch">
               <PipHero src="/images/hero.webp" alt="Pip, a gentle skull baby in a star nightcap, sitting on a cloud holding a glowing lantern and a tiny unicorn music box" />
@@ -34,6 +43,7 @@ export default function Home() {
             <EasterEgg />
           </div>
         </div>
+      </div>
       </div>
 
       <div className="marquee" aria-hidden="true">
@@ -114,6 +124,7 @@ export default function Home() {
         </div>
       </section>
 
+      <LazyDreamMobile />
       <LazyCatcher />
       <LazyDarkRoom />
       <LazyDreamMaker />
@@ -129,6 +140,17 @@ export default function Home() {
           </div>
           <VisitorCounter />
           <p>Character &amp; artwork: haX.baby Track 1 official asset pack.</p>
+          <details className="credits">
+            <summary>Credits &amp; thanks</summary>
+            <ul>
+              <li>Pip, the Midnight Nursery and all character artwork: haX.baby Track 1 official asset pack (hax.baby/baby-problem).</li>
+              <li>Fonts: Fraunces, Fredoka and Plus Jakarta Sans via Google Fonts (SIL Open Font License).</li>
+              <li>Sound: the Pip’s Dream Workshop audio pack (original synthesized ambience, music-box lullaby and sound effects), plus a few chimes synthesized live with the Web Audio API.</li>
+              <li>3D scene: three.js (MIT). Database: Supabase. Rate limiting: Upstash Redis. Hosting: Vercel.</li>
+              <li>Pip’s chat and dream-writing: Google Gemini or Groq models, prompted to stay gentle and in character, with a hand-written fallback.</li>
+              <li>Built with Next.js, React and TypeScript, with help from AI coding tools.</li>
+            </ul>
+          </details>
         </div>
       </footer>
     </main>

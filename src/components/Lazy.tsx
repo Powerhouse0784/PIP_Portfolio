@@ -10,6 +10,8 @@ const Catcher = dynamic(() => import("./Catcher"), { ssr: false });
 const DarkRoom = dynamic(() => import("./DarkRoom"), { ssr: false });
 const DreamMaker = dynamic(() => import("./DreamMaker"), { ssr: false });
 const Guestbook = dynamic(() => import("./Guestbook"), { ssr: false });
+// Three.js (~500 KB) stays out of the first load entirely: it downloads only when the 3D section is near.
+const DreamMobile = dynamic(() => import("./DreamMobile"), { ssr: false });
 
 export const LazyStorybook = () => <LazyMount minHeight={520}><Storybook /></LazyMount>;
 export const LazyToys = () => <LazyMount minHeight={560}><Toys /></LazyMount>;
@@ -18,3 +20,4 @@ export const LazyCatcher = () => <LazyMount id="catcher" minHeight={560}><Catche
 export const LazyDarkRoom = () => <LazyMount id="darkroom" minHeight={520}><DarkRoom /></LazyMount>;
 export const LazyDreamMaker = () => <LazyMount id="dreammaker" minHeight={420}><DreamMaker /></LazyMount>;
 export const LazyGuestbook = () => <LazyMount id="guestbook" minHeight={520}><Guestbook /></LazyMount>;
+export const LazyDreamMobile = () => <LazyMount id="mobile3d" minHeight={620} margin="300px"><DreamMobile /></LazyMount>;

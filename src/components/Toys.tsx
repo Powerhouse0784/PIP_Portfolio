@@ -14,7 +14,7 @@ const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21]; // pentatonic-ish climb
 const freq = (n: number) => 262 * Math.pow(2, SCALE[n % SCALE.length] / 12 + Math.floor(n / SCALE.length));
 
 function Tower() {
-  const { blip } = useAudio();
+  const { blip, play } = useAudio();
   const [tower, setTower] = useState<Block[]>([{ x: W / 2, w: BASE_W, c: 0 }]);
   const [best, setBest] = useState(0);
   const [fallen, setFallen] = useState(false);
@@ -73,13 +73,14 @@ function Tower() {
     const nb: Block = perfect ? { x: top.x, w: top.w, c: cur.length % COLORS.length } : { x: (lo + hi) / 2, w: ov, c: cur.length % COLORS.length };
     const n = cur.length; // new height
     setTower([...cur, nb]);
-    blip(freq(n) * (perfect ? 2 : 1));
+    play("toy");
+    if (perfect) blip(freq(n) * 2);
     if (perfect) say("Perfect! *giggle*");
     setMsg(perfect ? `Perfect! ${n} blocks high.` : `${n} blocks high. The block got a little narrower.`);
     if (n > best) { setBest(n); try { localStorage.setItem("pip-tower-best", String(n)); } catch {} }
     if (n === 10) setRec(nextReceipt("Delivered: a 10-block tower. Pip is very proud."));
     if (manual) setMx(W / 2);
-  }, [fallen, manual, mx, best, blip]);
+  }, [fallen, manual, mx, best, blip, play]);
 
   const key = (e: KeyboardEvent) => {
     if (e.key === " " || e.key === "Enter") { e.preventDefault(); drop(); }
@@ -137,7 +138,7 @@ function Tower() {
 
 /* ---------- Rattle ---------- */
 function Rattle() {
-  const { on, noise } = useAudio();
+  const { on, play } = useAudio();
   const [shakes, setShakes] = useState(0);
   const [pulse, setPulse] = useState(0);
   const [stars, setStars] = useState(0);
@@ -150,7 +151,7 @@ function Rattle() {
     if (now - last.current < 160) return;
     last.current = now;
     setPulse((p) => p + 1);
-    noise(5200, 0.05, 0.13); noise(3800, 0.05, 0.11, 0.06); noise(4600, 0.05, 0.1, 0.12);
+    play("toy", { cooldown: 450, volume: 0.22 });
     setShakes((s) => {
       const n = s + 1;
       if (n % 12 === 0) {
@@ -160,7 +161,7 @@ function Rattle() {
       }
       return n;
     });
-  }, [noise]);
+  }, [play]);
 
   const move = (e: PointerEvent) => {
     if (e.buttons === 0 && e.pointerType === "mouse") return;
