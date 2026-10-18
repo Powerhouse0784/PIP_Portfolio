@@ -18,7 +18,7 @@ const CMDS: Cmd[] = [
   { id: "guestbook", label: "Sign the guestbook", hint: "Go to", keys: "guestbook note message", run: go("guestbook") },
   { id: "game", label: "Catch the falling dreams", hint: "Play", keys: "game catch play toy", run: go("catcher") },
   { id: "mobile3d", label: "Pip’s 3D dream mobile", hint: "Play", keys: "3d three webgl stars mobile chime", run: go("mobile3d") },
-  { id: "dark", label: "The Dark Room (nightlight)", hint: "Go to", keys: "flashlight dark room secrets", run: go("darkroom") },
+  { id: "dark", label: "The Dark Room (nightlight)", hint: "Go to", keys: "flashlight dark room nightlight", run: go("darkroom") },
   { id: "chaos", label: "Toggle chaos mode", hint: "Action", keys: "chaos wild fun", run: press("chaos") },
   { id: "theme", label: "Toggle day / night", hint: "Action", keys: "theme dark light mode", run: press("theme") },
   { id: "sound", label: "Toggle sound", hint: "Action", keys: "sound mute audio music", run: press("sound") },

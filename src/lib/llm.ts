@@ -97,3 +97,90 @@ Hard rules: always gentle, cozy and kind. Never scary, creepy, gory, violent, ro
 
 /** Strip anything that could confuse the UI. */
 export const clean = (s: string, max: number) => s.replace(/[_`#>]/g, "").replace(/\s+/g, " ").trim().slice(0, max);
+
+/** Yields the `data:` payloads of a server-sent-events body. */
+async function* sse(body: ReadableStream<Uint8Array>): AsyncGenerator<string> {
+  const reader = body.getReader(), dec = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let nl: number;
+    while ((nl = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, nl).replace(/\r$/, ""); buf = buf.slice(nl + 1);
+      if (line.startsWith("data:")) yield line.slice(5).trim();
+    }
+  }
+  const rest = buf.trim();
+  if (rest.startsWith("data:")) yield rest.slice(5).trim();
+}
+
+async function* geminiStream({ system, turns, maxTokens, temperature = 0.9 }: Opts): AsyncGenerator<string> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return;
+  const call = (thinkingOff: boolean) => fetch(`${GEMINI_BASE}/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: turns.map((t) => ({ role: t.role === "user" ? "user" : "model", parts: [{ text: t.content }] })),
+      generationConfig: { maxOutputTokens: maxTokens, temperature, topP: 0.95, ...(thinkingOff ? { thinkingConfig: { thinkingBudget: 0 } } : {}) },
+    }),
+    signal: AbortSignal.timeout(20000),
+    cache: "no-store",
+  });
+  let res = await call(true);
+  if (res.status === 400) res = await call(false); // some models reject thinkingConfig
+  if (!res.ok || !res.body) throw new Error(`gemini ${res.status}`);
+  for await (const data of sse(res.body)) {
+    try {
+      const j = JSON.parse(data) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+      const t = j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("");
+      if (t) yield t;
+    } catch { /* keep-alives */ }
+  }
+}
+
+/** xAI Grok and Groq both speak the OpenAI Chat Completions streaming format. */
+async function* openAiStream(label: string, base: string, key: string | undefined, model: string, { system, turns, maxTokens, temperature = 0.9 }: Opts): AsyncGenerator<string> {
+  if (!key) return;
+  const res = await fetch(`${base}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({ model, max_tokens: maxTokens, temperature, stream: true, messages: [{ role: "system", content: system }, ...turns] }),
+    signal: AbortSignal.timeout(20000),
+    cache: "no-store",
+  });
+  if (!res.ok || !res.body) throw new Error(`${label} ${res.status}`);
+  for await (const data of sse(res.body)) {
+    if (data === "[DONE]") return;
+    try {
+      const j = JSON.parse(data) as { choices?: { delta?: { content?: string } }[] };
+      const t = j.choices?.[0]?.delta?.content;
+      if (t) yield t;
+    } catch { /* ignore */ }
+  }
+}
+
+/**
+ * Streams text from Gemini, then Grok, then Groq: the next provider is tried only if the previous one fails before saying
+ * anything. If a provider dies mid-sentence the stream simply ends and the caller keeps what it already has.
+ */
+export async function* streamText(opts: Opts): AsyncGenerator<string> {
+  const chain: [string, () => AsyncGenerator<string>][] = [
+    ["gemini", () => geminiStream(opts)],
+    ["xai", () => openAiStream("xai", XAI_BASE, xaiKey(), XAI_MODEL, opts)],
+    ["groq", () => openAiStream("groq", GROQ_BASE, process.env.GROQ_API_KEY, GROQ_MODEL, opts)],
+  ];
+  for (const [name, run] of chain) {
+    let started = false;
+    try {
+      for await (const chunk of run()) { started = true; yield chunk; }
+      if (started) return;
+    } catch (e) {
+      console.error(`[llm:${name}:stream]`, e instanceof Error ? e.message : e);
+      if (started) return;
+    }
+  }
+}

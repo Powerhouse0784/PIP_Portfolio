@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { moonPhase, litPath, greeting, dayPart, feelingForMoon, localDay } from "../src/lib/sky";
-import { inferFeel, isFeel, FEEL_LIST } from "../src/lib/feel";
+import { inferFeel, isFeel, FEEL_LIST, FEELS } from "../src/lib/feel";
 import { checkAdmin, adminConfigured } from "../src/lib/adminAuth";
 
 // Pure logic only: runs in milliseconds, needs no browser and no server.
@@ -33,6 +33,12 @@ test.describe("pure helpers", () => {
   });
   test("Pip's feelings: tags are whitelisted and words are read when there is no tag", () => {
     expect(FEEL_LIST.every(isFeel)).toBe(true);
+    expect(FEEL_LIST).toEqual(["happy", "sleepy", "giggly", "curious", "proud", "shy"]);
+    for (const mood of FEEL_LIST) {
+      expect(FEELS[mood].emoji).toBeTruthy();
+      expect(FEELS[mood].label).toBeTruthy();
+      expect(FEELS[mood].sparks.length).toBeGreaterThan(0);
+    }
     expect(isFeel("furious")).toBe(false);
     expect(inferFeel("*giggle* hehe!")).toBe("giggly");
     expect(inferFeel("*yawn* so sleepy")).toBe("sleepy");

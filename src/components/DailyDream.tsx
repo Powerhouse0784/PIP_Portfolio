@@ -5,6 +5,7 @@ import { feelingForMoon, localDay, moonPhase, type Moon } from "@/lib/sky";
 import { recipe, type Dream } from "@/lib/dreamRecipes";
 import { shareDreamCard } from "@/lib/shareCard";
 import { say } from "@/lib/pipSay";
+import DreamArt from "./DreamArt";
 
 type Saved = Dream & { day: string; moon: string; name: string };
 const CARD = "pip-daily", NAMES = "pip-name", LOG = "pip-daily-log";
@@ -68,6 +69,7 @@ export default function DailyDream() {
       const r = await shareDreamCard({
         dateLabel: d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }),
         moonName: card.moon, phase: moon.phase, title: card.title, text: card.text, nights,
+        art: { seed: `${card.title}|${card.text}`, feeling: feelingForMoon(card.moon), text: card.text },
         filename: `pip-dream-${card.day}.png`, shareText: `${card.title}: my dream card from Pip’s Dream Workshop ✦`,
       });
       if (r === "downloaded") { setNote("Saved as a picture. Sweet dreams!"); say("A keepsake! I’m blushing."); }
@@ -87,6 +89,7 @@ export default function DailyDream() {
             {card ? (
               <>
                 <p className="label">{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })} · {card.moon}</p>
+                <DreamArt className="dart-daily" seed={`${card.title}|${card.text}`} feeling={feelingForMoon(card.moon)} text={card.text} />
                 <h3>{card.title}</h3>
                 <p>{card.text}</p>
                 <p className="small">{card.ai ? "Stitched tonight by Pip’s dream-writing AI." : "Made from Pip’s recipe book."} {nights > 1 ? `Night ${nights} of your dream diary.` : "The first page of your dream diary."}</p>

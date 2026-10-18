@@ -9,7 +9,7 @@ import Story from "@/components/Story";
 import EasterEgg from "@/components/EasterEgg";
 import StatsStrip from "@/components/StatsStrip";
 import PipHero from "@/components/PipHero";
-import PipTalk from "@/components/PipTalk";
+import PipDreamCorner from "@/components/PipDreamCorner";
 import VisitorCounter from "@/components/VisitorCounter";
 import { ReplayIntro } from "@/components/Intro";
 
@@ -44,12 +44,13 @@ export default function Home() {
               <PipHero src="/images/hero.webp" alt="Pip, a gentle skull baby in a star nightcap, sitting on a cloud holding a glowing lantern and a tiny unicorn music box" />
             </div>
             <EasterEgg />
-            <PipTalk />
           </div>
         </div>
       </div>
         <a className="scroll-cue" href="#about" aria-label="Scroll down to meet Pip"><span>scroll</span><span aria-hidden="true">↓</span></a>
       </div>
+
+      <PipDreamCorner />
 
       <div className="marquee" aria-hidden="true">
         <div>{[0, 1].map((k) => <span key={k}>✦ now delivering dreams ✦ best viewed in dreamland ✦ please do not feed the nightlights ✦ 0% scary, 100% cozy ✦ </span>)}</div>
@@ -152,6 +153,7 @@ export default function Home() {
               <li>Pip, the Midnight Nursery and all character artwork: haX.baby Track 1 official asset pack (hax.baby/baby-problem).</li>
               <li>Fonts: Fraunces, Fredoka and Plus Jakarta Sans via Google Fonts (SIL Open Font License).</li>
               <li>Sound: the Pip’s Dream Workshop audio pack (original synthesized ambience, music-box lullaby and sound effects), plus a few chimes synthesized live with the Web Audio API.</li>
+              <li>Weather (only if a visitor asks): Open-Meteo.com, free and key-less, licensed CC BY 4.0.</li>
               <li>3D scene: three.js (MIT). Database: Supabase. Rate limiting: Upstash Redis. Hosting: Vercel.</li>
               <li>Pip’s chat and dream-writing: Google Gemini or Groq models, prompted to stay gentle and in character, with a hand-written fallback.</li>
               <li>Built with Next.js, React and TypeScript, with help from AI coding tools.</li>

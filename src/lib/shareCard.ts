@@ -1,4 +1,5 @@
 import { litPath } from "./sky";
+import { dreamArtSrc, type ArtFeel } from "./dreamArt";
 
 export type Card = { kicker: string; title: string; big: string; unit: string; lines: string[]; filename: string; shareText: string };
 
@@ -78,7 +79,7 @@ export async function shareCard(c: Card): Promise<"shared" | "downloaded" | "can
   return deliver(await renderCard(c), c.filename, c.shareText);
 }
 
-export type DreamCard = { dateLabel: string; moonName: string; phase: number; title: string; text: string; nights: number; filename: string; shareText: string };
+export type DreamCard = { dateLabel: string; moonName: string; phase: number; title: string; text: string; nights: number; filename: string; shareText: string; art?: { seed: string; feeling: ArtFeel; text?: string } };
 
 /** The daily dream card: a 1080x1350 night-sky keepsake with the real moon phase, the dream, and Pip in his arched window. */
 export async function renderDreamCard(c: DreamCard): Promise<Blob> {
@@ -89,7 +90,15 @@ export async function renderDreamCard(c: DreamCard): Promise<Blob> {
 
   const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#14112a"); g.addColorStop(0.55, "#2b2142"); g.addColorStop(1, "#5b3f6b");
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  for (let i = 0; i < 90; i++) { // deterministic stars
+  // The dream's own painted night scene (same-origin data URI, so the canvas is never tainted), dimmed so the words stay readable.
+  const art = c.art ? await loadImg(dreamArtSrc(c.art.seed, c.art.feeling, c.art.text)).catch(() => null) : null;
+  if (art) {
+    ctx.drawImage(art, 0, 0, W, H);
+    const v = ctx.createLinearGradient(0, 0, 0, H);
+    v.addColorStop(0, "rgba(14,11,32,.30)"); v.addColorStop(0.22, "rgba(14,11,32,.66)"); v.addColorStop(0.7, "rgba(14,11,32,.74)"); v.addColorStop(1, "rgba(14,11,32,.38)");
+    ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  }
+  for (let i = 0; i < (art ? 0 : 90); i++) { // deterministic stars
     ctx.fillStyle = `rgba(255,${226 + (i % 3) * 8},${170 + (i % 5) * 12},${0.25 + ((i * 29) % 60) / 100})`;
     ctx.beginPath(); ctx.arc((i * 211) % W, (i * 389) % H, 1.2 + (i % 4) * 0.7, 0, 7); ctx.fill();
   }

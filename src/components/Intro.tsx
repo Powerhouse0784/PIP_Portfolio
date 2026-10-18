@@ -69,12 +69,14 @@ export default function Intro() {
     if (withSound && ensure()) { setOn(true); play("chime"); }
     const rm = matchMedia("(prefers-reduced-motion:reduce)").matches;
     setLeave(how);
+    window.dispatchEvent(new Event("pip:intro-leave")); // the hero starts its entrance as the clouds part
     window.setTimeout(close, rm ? 0 : how === "skip" ? SKIP_MS : LEAVE_MS);
   }, [close, ensure, setOn, play]);
 
   // Boot: open if the head script flagged a first visit, and allow replay from the footer.
   useEffect(() => {
     const start = () => { leaving.current = false; setLeave(""); setReady(false); setOpen(true); };
+    document.documentElement.dataset.introReady = "1"; // tells the head script's safety timer the scene is alive
     if (document.documentElement.dataset.intro === "on") start();
     const replay = () => { window.scrollTo(0, 0); document.documentElement.dataset.intro = "on"; start(); };
     addEventListener("pip:intro", replay);

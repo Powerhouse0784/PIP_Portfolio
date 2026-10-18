@@ -234,7 +234,7 @@ test.describe("Pip chat (AI with a hand-written fallback)", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Chat with Pip" }).click();
     await page.getByRole("button", { name: "What do you do?" }).click();
-    await expect(page.getByText(/dreams, lullabies, nightlights and bedtime stories/)).toBeVisible();
+    await expect(page.locator(".chat, [role=dialog]").getByText(/nightlights and bedtime stories|tuning a lullaby|I build dre/).first()).toBeVisible(); // the rule book now has several phrasings
   });
 
   test("falls back when the network call fails", async ({ page }) => {

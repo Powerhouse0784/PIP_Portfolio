@@ -5,6 +5,8 @@ import { useEffect } from "react";
 const FX: [string, string][] = [
   [".about .arch", "left"],
   [".about .label, .about h2, .about .lede", "rise"],
+  ["main section > .wrap > .label, main section > .wrap > h2", "rise"],
+  [".dcard, .tonight, .wish-card", "zoom"],
   [".fact", "rise"],
   [".proj", "zoom"],
   [".game", "zoom"],
@@ -25,6 +27,13 @@ export default function ScrollFX() {
     if (matchMedia("(prefers-reduced-motion:reduce)").matches || !("IntersectionObserver" in window)) return;
     const root = document.documentElement;
     root.classList.add("fx-ready");
+
+    // Hero entrance: held back (html.hero-wait, set before first paint) until the opening scene starts to leave.
+    const heroGo = () => { root.classList.add("hero-go"); root.classList.remove("hero-wait"); };
+    if (root.dataset.intro === "on") {
+      addEventListener("pip:intro-leave", heroGo, { once: true });
+      addEventListener("pip:intro-done", heroGo, { once: true });
+    } else root.classList.add("hero-go"); // already set before first paint; re-asserted here for dev remounts
 
     const io = new IntersectionObserver((es) => es.forEach((e) => {
       if (e.isIntersecting) { e.target.classList.add("fx-in"); io.unobserve(e.target); }
@@ -65,8 +74,9 @@ export default function ScrollFX() {
     addEventListener("resize", onScroll);
     return () => {
       io.disconnect(); mo.disconnect(); clearTimeout(timer); cancelAnimationFrame(raf);
+      removeEventListener("pip:intro-leave", heroGo); removeEventListener("pip:intro-done", heroGo);
       removeEventListener("scroll", onScroll); removeEventListener("resize", onScroll);
-      root.classList.remove("fx-ready", "scrolled");
+      root.classList.remove("fx-ready", "scrolled", "hero-go", "hero-wait");
     };
   }, []);
   return null;

@@ -58,12 +58,19 @@ export const parseCommand = (text: string): Act | null => {
 };
 
 /** Make Pip do something now (hero listens for pip:act) and put the matching expression on his face. */
-export const perform = (a: Act) => {
+/** The page has two Pips: the hero and the one in the Dream Corner. Commands go to whichever is on screen. */
+export type Who = "hero" | "corner";
+export const target = (): Who => {
+  if (typeof document === "undefined") return "hero";
+  const r = document.getElementById("dream-corner")?.getBoundingClientRect();
+  return r && r.top < innerHeight * 0.75 && r.bottom > innerHeight * 0.25 ? "corner" : "hero";
+};
+export const perform = (a: Act, to: Who = target()) => {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent("pip:act", { detail: { act: a } }));
+  window.dispatchEvent(new CustomEvent("pip:act", { detail: { act: a, to } }));
   feel(ACT_MOOD[a]);
 };
 /** Pip's head bobs while he talks. */
-export const talking = (on: boolean) => {
-  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("pip:talk", { detail: { on } }));
+export const talking = (on: boolean, to: Who = target()) => {
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("pip:talk", { detail: { on, to } }));
 };

@@ -1,4 +1,5 @@
 "use client";
+import SkyWeather from "./SkyWeather";
 import { useEffect, useState } from "react";
 import MoonPhase from "./MoonPhase";
 import { greeting, moonPhase, type Moon } from "@/lib/sky";
@@ -14,6 +15,7 @@ export default function TonightSky() {
   }, []);
 
   return (
+    <div className="tonight-wrap">
     <div className="tonight" aria-label="Tonight’s sky">
       {s ? (
         <>
@@ -26,6 +28,8 @@ export default function TonightSky() {
           </div>
         </>
       ) : <span className="tn-wait" aria-hidden="true" />}
+    </div>
+    <SkyWeather />
     </div>
   );
 }

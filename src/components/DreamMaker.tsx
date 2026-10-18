@@ -1,12 +1,14 @@
 "use client";
 import { useRef, useState } from "react";
 
+import DreamArt from "./DreamArt";
 import { FEELINGS, recipe, type Dream, type Feeling } from "@/lib/dreamRecipes";
 
 export default function DreamMaker() {
   const [name, setName] = useState("");
   const [feeling, setFeeling] = useState<Feeling>("cozy");
   const [dream, setDream] = useState<Dream | null>(null);
+  const [shownFeeling, setShownFeeling] = useState<Feeling>("cozy");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
@@ -25,6 +27,7 @@ export default function DreamMaker() {
       if (res.ok && j.title && j.text) out = { title: j.title, text: j.text, ai: true };
       else if (res.status === 429 && j.error) setNote(j.error);
     } catch { /* offline: use the recipe book */ }
+    setShownFeeling(feeling);
     setDream(out ?? recipe(who, feeling));
     lock.current = false; setBusy(false);
   };
@@ -58,6 +61,7 @@ export default function DreamMaker() {
             {dream ? (
               <>
                 <p className="label">Dream order · delivered</p>
+                <DreamArt className="dart-ticket" seed={`${dream.title}|${dream.text}`} feeling={shownFeeling} text={dream.text} />
                 <h3>{dream.title}</h3>
                 <p>{dream.text}</p>
                 <p className="small">{dream.ai ? "Freshly stitched by Pip’s dream-writing AI." : "Made from Pip’s recipe book."}</p>

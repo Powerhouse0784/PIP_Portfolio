@@ -22,6 +22,7 @@ My proudest details: one consistent motion language, sound that is off until you
 - Fonts: Fraunces, Fredoka, Plus Jakarta Sans (SIL Open Font License, via Google Fonts).
 - Sound: Pip's Dream Workshop audio pack (original synthesized ambience, lullaby and effects), plus live Web Audio chimes.
 - Libraries and services: Next.js, React, TypeScript, three.js (MIT), zod, Supabase, Upstash Redis, Vercel, Playwright; Google Gemini and Groq models for Pip's chat and dream-writing.
+- Weather (only when a visitor asks): Open-Meteo.com, free and key-less (CC BY 4.0).
 - AI coding assistance: Claude.
 
 ## 60-second judge walkthrough

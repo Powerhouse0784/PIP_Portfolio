@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useAudio } from "./Providers";
 import { pick, say } from "@/lib/pipSay";
 import { FEELS, isFeel, type Feel } from "@/lib/feel";
@@ -18,13 +18,22 @@ const isNight = () => {
  * Clicking Pip makes him giggle. At night Pip falls asleep (dim eyes, breathing, floating z's):
  * tap him to wake him for a few seconds. With reduced motion everything stays still.
  */
-export default function PipHero({ src, alt }: { src: string; alt: string }) {
+type Props = {
+  src: string; alt: string;
+  /** "hero" (default) or "corner": commands and talking only move the Pip they are meant for. */
+  id?: "hero" | "corner";
+  /** When set, overrides the night-time sleep logic (the Dream Corner's Sleepy mode). */
+  sleep?: boolean;
+  onWake?: () => void;
+  children?: ReactNode;
+};
+export default function PipHero({ src, alt, id = "hero", sleep, onWake, children }: Props) {
   const stage = useRef<HTMLDivElement>(null);
   const nap = useRef<number>(0);
   const { blip } = useAudio();
   const [night, setNight] = useState(false);
   const [awake, setAwake] = useState(false);
-  const asleep = night && !awake;
+  const asleep = sleep !== undefined ? sleep : night && !awake;
   // Expressions from the chat: eyes, blush and sparkles react for a few seconds. The official art itself is never altered.
   const [feel, setFeel] = useState<Feel | null>(null);
   const [fx, setFx] = useState<{ id: number; ch: string; x: number; y: number; dx: number }[]>([]);
@@ -56,8 +65,9 @@ export default function PipHero({ src, alt }: { src: string; alt: string }) {
   const actT = useRef(0);
   useEffect(() => {
     const onAct = (e: Event) => {
-      const a = (e as CustomEvent<{ act: unknown }>).detail?.act;
-      if (!isAct(a)) return;
+      const d = (e as CustomEvent<{ act: unknown; to?: string }>).detail;
+      const a = d?.act;
+      if (!isAct(a) || (d?.to ?? "hero") !== id) return;
       setAct(a);
       if (a !== "sleep") { setAwake(true); clearTimeout(nap.current); nap.current = window.setTimeout(() => setAwake(false), ACT_MS[a] + 4000); }
       if (!matchMedia("(prefers-reduced-motion:reduce)").matches) {
@@ -69,7 +79,10 @@ export default function PipHero({ src, alt }: { src: string; alt: string }) {
       clearTimeout(actT.current);
       actT.current = window.setTimeout(() => setAct(null), ACT_MS[a]);
     };
-    const onTalk = (e: Event) => setTalk(Boolean((e as CustomEvent<{ on: boolean }>).detail?.on));
+    const onTalk = (e: Event) => {
+      const d = (e as CustomEvent<{ on: boolean; to?: string }>).detail;
+      if (!d?.on) setTalk(false); else if ((d.to ?? "hero") === id) setTalk(true);
+    };
     addEventListener("pip:act", onAct);
     addEventListener("pip:talk", onTalk);
     return () => { removeEventListener("pip:act", onAct); removeEventListener("pip:talk", onTalk); clearTimeout(actT.current); };
@@ -127,7 +140,9 @@ export default function PipHero({ src, alt }: { src: string; alt: string }) {
     void el.offsetWidth;
     el.classList.add("giggle");
     blip(784);
-    if (asleep) {
+    if (asleep && sleep !== undefined) {
+      onWake?.();
+    } else if (asleep) {
       setAwake(true);
       say("*yawn* I’m up! I’m up!");
       clearTimeout(nap.current);
@@ -142,7 +157,7 @@ export default function PipHero({ src, alt }: { src: string; alt: string }) {
     <div
       className="stage" ref={stage} onClick={poke} onKeyDown={key}
       role="button" tabIndex={0} data-sleep={asleep} data-feel={feel ?? undefined} data-act={act ?? undefined} data-talk={talk || undefined}
-      aria-label={asleep ? "Pip is sleeping. Press to wake him." : "Pip. Press to make him giggle."}
+      aria-label={id === "corner" ? (asleep ? "Pip in the Dream Corner is sleeping. Press to wake him." : "Pip in the Dream Corner. Press to make him giggle.") : asleep ? "Pip is sleeping. Press to wake him." : "Pip. Press to make him giggle."}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={alt} width={620} height={931} />
@@ -151,6 +166,7 @@ export default function PipHero({ src, alt }: { src: string; alt: string }) {
       <span className="blush" aria-hidden="true" style={{ left: "69.4%", top: "43.5%" }} />
       {fx.map((p) => <span key={p.id} className="fx" aria-hidden="true" style={{ left: `${p.x}%`, top: `${p.y}%`, ["--dx" as string]: `${p.dx}px` }}>{p.ch}</span>)}
       {(asleep || feel === "sleepy") && <span className="zzz" aria-hidden="true"><i>z</i><i>z</i><i>Z</i></span>}
+      {children}
     </div>
   );
 }

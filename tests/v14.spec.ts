@@ -151,7 +151,7 @@ test.describe("Pip's mood from the chat", () => {
   const send = async (page: Page, text: string) => {
     await page.getByRole("button", { name: "Chat with Pip" }).click();
     await page.getByLabel("Message to Pip").fill(text);
-    await page.getByRole("button", { name: "Send" }).click();
+    await page.getByRole("button", { name: "Send", exact: true }).click();
   };
 
   test("the AI's mood tag drives Pip's expression for a few seconds", async ({ page }) => {
@@ -196,7 +196,7 @@ test.describe("mood-reactive scenery", () => {
     await page.goto("/");
     await reveal(page, "projects");
     await page.getByRole("button", { name: "Rose" }).click();
-    await page.getByRole("button", { name: "Brave" }).click();
+    await page.getByRole("group", { name: "Lullaby mood" }).getByRole("button", { name: "Brave" }).click();
     await page.getByRole("button", { name: "Play lullaby" }).click();
     await expect(page.locator(".mood")).toHaveAttribute("style", /255,\s*196,\s*80/); // brave gold wins while playing
     await expect.poll(() => page.evaluate(() => (window as unknown as { __notes: unknown[] }).__notes.length)).toBeGreaterThanOrEqual(2);
