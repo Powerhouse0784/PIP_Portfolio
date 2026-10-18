@@ -1,6 +1,6 @@
 /**
  * Tiny provider chain for Pip's voice. Server-only.
- * Order: Gemini (free tier) -> Groq (free tier). With no keys, or if both fail, generate() returns null
+ * Order: Gemini -> xAI Grok -> Groq. With no keys, or if both fail, generate() returns null
  * and the UI quietly falls back to Pip's hand-written rules, so the site never breaks because of an API.
  */
 export type Turn = { role: "user" | "assistant"; content: string };
@@ -11,7 +11,11 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
 const GROQ_BASE = process.env.GROQ_API_BASE ?? "https://api.groq.com/openai/v1";
 const GROQ_MODEL = process.env.GROQ_MODEL ?? "llama-3.1-8b-instant";
 
-export const aiConfigured = () => Boolean(process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY);
+const XAI_BASE = process.env.XAI_API_BASE ?? "https://api.x.ai/v1";
+const XAI_MODEL = process.env.XAI_MODEL ?? "grok-4.3";
+const xaiKey = () => process.env.XAI_API_KEY || process.env.GROK_API_KEY;
+
+export const aiConfigured = () => Boolean(process.env.GEMINI_API_KEY || xaiKey() || process.env.GROQ_API_KEY);
 
 async function gemini({ system, turns, maxTokens, temperature = 0.9 }: Opts): Promise<string | null> {
   const key = process.env.GEMINI_API_KEY;
@@ -56,8 +60,27 @@ async function groq({ system, turns, maxTokens, temperature = 0.9 }: Opts): Prom
   return j.choices?.[0]?.message?.content?.trim() || null;
 }
 
+/** xAI Grok (OpenAI-compatible Chat Completions). Slug is overridable with XAI_MODEL. */
+async function xai({ system, turns, maxTokens, temperature = 0.9 }: Opts): Promise<string | null> {
+  const key = xaiKey();
+  if (!key) return null;
+  const res = await fetch(`${XAI_BASE}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: XAI_MODEL, max_tokens: maxTokens, temperature,
+      messages: [{ role: "system", content: system }, ...turns],
+    }),
+    signal: AbortSignal.timeout(12000),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`xai ${res.status}`);
+  const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  return j.choices?.[0]?.message?.content?.trim() || null;
+}
+
 export async function generate(opts: Opts): Promise<string | null> {
-  for (const [name, fn] of [["gemini", gemini], ["groq", groq]] as const) {
+  for (const [name, fn] of [["gemini", gemini], ["xai", xai], ["groq", groq]] as const) {
     try {
       const out = await fn(opts);
       if (out) return out;

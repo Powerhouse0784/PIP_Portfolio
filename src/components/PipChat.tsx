@@ -1,25 +1,27 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useAudio } from "./Providers";
+import { FEELS, feel, inferFeel, isFeel, type Feel } from "@/lib/feel";
 
-const RULES: [RegExp, string][] = [
-  [/\b(hi|hello|hey|hiya)\b/i, "Hello, sleepyhead! *giggle*"],
-  [/\b(name|who)\b/i, "I’m Pip, Junior Dream Engineer at Midnight Nursery."],
-  [/\b(job|work|do|make|build)\b/i, "I design dreams, lullabies, nightlights and bedtime stories."],
-  [/\b(lullaby|music|song|sing)\b/i, "Try the Lullaby Lab! Pick a mood and press play. I hum along."],
-  [/\b(scary|skull|bone|spooky)\b/i, "My head is just very round and very cozy. Nothing scary here!"],
-  [/\b(sleep|tired|night|dream)\b/i, "*yawn* Me too. Close your eyes and I’ll send you a dream."],
-  [/\b(secret|egg|hidden|star)\b/i, "Hehe… the smallest star in my hero picture loves attention. Five pokes!"],
-  [/\b(game|play|toy)\b/i, "Catch the falling dreams! Hearts are worth three. Don’t tell the stars."],
-  [/\b(thanks|thank)\b/i, "You’re welcome! *giggles*"],
+const RULES: [RegExp, string, Feel][] = [
+  [/\b(hi|hello|hey|hiya)\b/i, "Hello, sleepyhead! *giggle*", "giggly"],
+  [/\b(name|who)\b/i, "I’m Pip, Junior Dream Engineer at Midnight Nursery.", "happy"],
+  [/\b(job|work|do|make|build)\b/i, "I design dreams, lullabies, nightlights and bedtime stories.", "proud"],
+  [/\b(lullaby|music|song|sing)\b/i, "Try the Lullaby Lab! Pick a mood and press play. I hum along.", "happy"],
+  [/\b(scary|skull|bone|spooky)\b/i, "My head is just very round and very cozy. Nothing scary here!", "shy"],
+  [/\b(sleep|tired|night|dream)\b/i, "*yawn* Me too. Close your eyes and I’ll send you a dream.", "sleepy"],
+  [/\b(secret|egg|hidden|star)\b/i, "Hehe… the smallest star in my hero picture loves attention. Five pokes!", "giggly"],
+  [/\b(game|play|toy)\b/i, "Catch the falling dreams! Hearts are worth three. Don’t tell the stars.", "giggly"],
+  [/\b(thanks|thank)\b/i, "You’re welcome! *giggles*", "shy"],
 ];
 const CHIPS = ["What do you do?", "Tell me a secret", "Let’s play"];
 const ASK_AGAIN = "Hmm… I’m too sleepy to understand. Try “what do you do?” or “secret”.";
 const LABELS: Record<string, string> = {
   about: "Meet Pip", projects: "my projects", storybook: "the storybook", toys: "the toys", growth: "my growth chart",
   catcher: "the dream catcher game", darkroom: "the Dark Room", dreammaker: "the dream maker", mobile3d: "the 3D dream mobile",
-  story: "my story", guestbook: "the guestbook",
+  story: "my story", guestbook: "the guestbook", daily: "tonight’s dream card",
 };
-type M = { me: boolean; text: string; go?: string | null };
+type M = { me: boolean; text: string; go?: string | null; mood?: Feel };
 
 const reduced = () => matchMedia("(prefers-reduced-motion:reduce)").matches;
 
@@ -32,6 +34,9 @@ export default function PipChat() {
   const [canTalk, setCanTalk] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
+  const { play } = useAudio();
+  const [mood, setMood] = useState<Feel | null>(null);
+  const moodT = useRef(0);
 
   useEffect(() => { end.current?.scrollIntoView({ block: "nearest" }); }, [msgs, open, busy]);
   useEffect(() => { setCanTalk("speechSynthesis" in window); return () => { try { speechSynthesis.cancel(); } catch {} }; }, []);
@@ -54,19 +59,25 @@ export default function PipChat() {
     const history = [...msgs, { me: true, text: t }];
     setMsgs(history);
 
-    let reply = "", go: string | null = null;
+    let reply = "", go: string | null = null, m: Feel | null = null;
     try {
       const res = await fetch("/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: history.slice(-7).map((m) => ({ role: m.me ? "user" : "assistant", content: m.text.slice(0, 300) })) }),
       });
-      const j = (await res.json().catch(() => ({}))) as { reply?: string; go?: string | null; error?: string; unavailable?: boolean };
-      if (res.ok && j.reply) { reply = j.reply; go = j.go ?? null; }
+      const j = (await res.json().catch(() => ({}))) as { reply?: string; go?: string | null; mood?: string; error?: string; unavailable?: boolean };
+      if (res.ok && j.reply) { reply = j.reply; go = j.go ?? null; m = isFeel(j.mood) ? j.mood : null; }
       else if (res.status === 429 && j.error) reply = j.error;
     } catch { /* offline or API asleep: fall through to the rule book */ }
-    if (!reply) reply = RULES.find(([re]) => re.test(t))?.[1] ?? ASK_AGAIN;
+    if (!reply) { const r = RULES.find(([re]) => re.test(t)); reply = r?.[1] ?? ASK_AGAIN; m = r?.[2] ?? "curious"; }
+    const mood_ = m ?? inferFeel(reply);
 
-    setMsgs((m) => [...m, { me: false, text: reply, go }]);
+    // Pip's face follows the conversation: the hero art reacts, and the chat shows how he feels.
+    feel(mood_); setMood(mood_);
+    if (mood_ === "proud" || mood_ === "happy") play("sparkle", { cooldown: 4000, volume: 0.25 });
+    clearTimeout(moodT.current); moodT.current = window.setTimeout(() => setMood(null), 8000);
+
+    setMsgs((cur) => [...cur, { me: false, text: reply, go, mood: mood_ }]);
     speak(reply);
     busyRef.current = false; setBusy(false);
   };
@@ -82,6 +93,9 @@ export default function PipChat() {
     <div className="chat">
       {open && (
         <div className="chat-panel" role="dialog" aria-label="Chat with Pip">
+          <p className="chat-mood" role="status" data-feel={mood ?? "idle"}>
+            <span aria-hidden="true">{mood ? FEELS[mood].emoji : "💤"}</span> {mood ? `Pip feels ${FEELS[mood].label}` : "Pip is sleepy and listening"}
+          </p>
           <div className="chat-log" aria-live="polite">
             {msgs.map((m, i) => (
               <div key={i} className={m.me ? "me" : "pip"}>
@@ -102,7 +116,7 @@ export default function PipChat() {
           </form>
         </div>
       )}
-      <button className="chat-fab" aria-expanded={open} aria-label={open ? "Close chat with Pip" : "Chat with Pip"} onClick={() => setOpen(!open)}>{open ? "✕" : "💤"}</button>
+      <button className="chat-fab" aria-expanded={open} aria-label={open ? "Close chat with Pip" : "Chat with Pip"} onClick={() => setOpen(!open)}>{open ? "✕" : mood ? FEELS[mood].emoji : "💤"}</button>
     </div>
   );
 }

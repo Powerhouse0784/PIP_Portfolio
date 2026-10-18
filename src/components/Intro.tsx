@@ -58,6 +58,7 @@ export default function Intro() {
     if (main) { main.setAttribute("tabindex", "-1"); main.focus({ preventScroll: true }); }
     window.scrollTo(0, 0);
     say("Welcome to the workshop, sleepyhead!");
+    window.dispatchEvent(new Event("pip:intro-done")); // lets the "welcome back, sound on?" prompt appear
   }, [unlock]);
 
   const finish = useCallback((how: Exclude<Leave, "">, withSound = false) => {

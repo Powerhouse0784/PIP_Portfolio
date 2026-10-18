@@ -1,26 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 
-const FEELINGS = {
-  cozy: { label: "Cozy", adj: "snuggly", places: ["a blanket fort built from warm clouds", "a tiny cabin where the fireplace hums"], gift: "a cup of warm moonmilk", end: "wrapped up as snug as a sleeping kitten" },
-  brave: { label: "Brave", adj: "bold", places: ["the tallest rooftop in Midnight Nursery", "a bridge made of rainbows"], gift: "a lantern that never goes out", end: "standing tall, with nothing left to fear" },
-  floaty: { label: "Floaty", adj: "drifting", places: ["a cloud that drifts above the sleepy sea", "a sky full of slow, kind balloons"], gift: "a pair of feather-light slippers", end: "floating gently toward the morning" },
-  giggly: { label: "Giggly", adj: "giggly", places: ["a meadow where the flowers tell jokes", "a playground made entirely of pillows"], gift: "a jar of sparkling giggles", end: "giggling softly in their sleep" },
-} as const;
-type Feeling = keyof typeof FEELINGS;
-type Dream = { title: string; text: string; ai: boolean };
-
-const pick = <T,>(a: readonly T[]): T => a[Math.floor(Math.random() * a.length)];
-
-/** Pip's recipe book: always works, even offline or with no API key. */
-function recipe(name: string, f: Feeling): Dream {
-  const d = FEELINGS[f];
-  return {
-    ai: false,
-    title: `${name}’s ${d.adj} dream`,
-    text: `Tonight, ${name} drifts away to ${pick(d.places)}. A tiny star waves hello and hands over ${d.gift}. By the time the moon gives a big yawn, ${name} is ${d.end}. Sweet dreams. — Pip ✦`,
-  };
-}
+import { FEELINGS, recipe, type Dream, type Feeling } from "@/lib/dreamRecipes";
 
 export default function DreamMaker() {
   const [name, setName] = useState("");

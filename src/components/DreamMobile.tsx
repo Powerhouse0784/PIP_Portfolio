@@ -5,6 +5,9 @@ import { useAudio } from "./Providers";
 import Receipt from "./Receipt";
 import { nextReceipt, type R } from "@/lib/receipt";
 import { pick, say } from "@/lib/pipSay";
+import Reactions from "./Reactions";
+import type { GbEntry } from "@/lib/guestbookTypes";
+import type { NoteDetail, TintFinal } from "@/lib/tint";
 
 const NOTES = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98]; // C major pentatonic, two octaves
 const NOTE_NAMES = ["C", "D", "E", "G", "A", "C", "D", "E", "G"];
@@ -48,7 +51,18 @@ function glowTexture() {
   return t;
 }
 
-type Api = { ring: (i?: number) => void; turn: (d: number) => void; setStill: (v: boolean) => void };
+/** Fold a lullaby note into the pentatonic scale of the stars: same pitch class lights the matching star. */
+function noteToStar(f: number, i: number) {
+  let x = f;
+  while (x < NOTES[0]) x *= 2;
+  while (x >= NOTES[0] * 2) x /= 2;
+  let pc = 0, best = Infinity;
+  for (let k = 0; k < 5; k++) { const d = Math.abs(Math.log2(x / NOTES[k])); if (d < best) { best = d; pc = k; } }
+  return pc + (i % 2 && pc + 5 < NOTES.length ? 5 : 0);
+}
+const hashId = (n: number) => { let h = n * 2654435761 >>> 0; h ^= h >>> 15; return (h >>> 0) / 4294967296; };
+
+type Api = { ring: (i?: number) => void; turn: (d: number) => void; setStill: (v: boolean) => void; wish: (id: number) => void; syncWishes: (es: GbEntry[]) => void };
 
 /**
  * Tier 3: a real WebGL (Three.js) diorama. Pip's official art sits in an arched window while gold stars,
@@ -68,6 +82,10 @@ export default function DreamMobile() {
   const [still, setStill] = useState(false);
   const [rung, setRung] = useState<Set<number>>(new Set());
   const [rec, setRec] = useState<R | null>(null);
+  const [wishes, setWishes] = useState<GbEntry[]>([]);
+  const [wishSel, setWishSel] = useState<GbEntry | null>(null);
+  const onWishRef = useRef<(e: GbEntry) => void>(() => {});
+  onWishRef.current = setWishSel;
   const rungRef = useRef(rung);
   rungRef.current = rung;
 
@@ -101,6 +119,7 @@ export default function DreamMobile() {
     const key = new THREE.DirectionalLight(0xfff0dd, 1.4); key.position.set(3, 5, 6);
     const warm = new THREE.PointLight(0xffc27a, 0, 14); warm.position.set(0, 0.4, 3);
     scene.add(amb, key, warm);
+    let glowBase = 0.45, warmBase = 0, glowPulse = 0; // pulses ride on top of the theme's base light
 
     // Pip's arched window (official art, drawn into a canvas texture so the arch edge stays crisp)
     const pipMat = track(new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }));
@@ -152,13 +171,40 @@ export default function DreamMobile() {
     const starGeo = track(new THREE.ExtrudeGeometry(starShape(0.34, 0.15), { depth: 0.1, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 2 }));
     starGeo.center();
     const colors = [0xf4c869, 0xf6b3cb, 0xd8c6ef, 0xf4c869, 0xf6b3cb, 0xffe19a, 0xd8c6ef, 0xf4c869, 0xffe19a];
-    type S = { m: THREE.Mesh; r: number; a: number; v: number; y: number; s: number; pop: number; hue: THREE.MeshStandardMaterial };
+    type S = { m: THREE.Mesh; r: number; a: number; v: number; y: number; s: number; pop: number; flash: number; hue: THREE.MeshStandardMaterial };
     const stars: S[] = colors.map((col, i) => {
       const hue = track(new THREE.MeshStandardMaterial({ color: col, roughness: 0.35, metalness: 0.1, emissive: col, emissiveIntensity: 0.3 }));
       const m = new THREE.Mesh(starGeo, hue);
       m.userData.i = i; world.add(m);
-      return { m, hue, r: 2.15 + (i % 4) * 0.42, a: (i / colors.length) * Math.PI * 2, v: (0.12 + (i % 3) * 0.05) * (i % 2 ? -1 : 1), y: -1.5 + ((i * 0.73) % 3.6), s: 0.8 + (i % 3) * 0.22, pop: 0 };
+      return { m, hue, r: 2.15 + (i % 4) * 0.42, a: (i / colors.length) * Math.PI * 2, v: (0.12 + (i % 3) * 0.05) * (i % 2 ? -1 : 1), y: -1.5 + ((i * 0.73) % 3.6), s: 0.8 + (i % 3) * 0.22, pop: 0, flash: 0 };
     });
+
+    // wish wall: every approved guestbook note floats as a small pink-white star. Tap one to read it.
+    type W = { m: THREE.Mesh; e: GbEntry; r: number; a: number; v: number; y: number; s: number; pop: number; born: number };
+    const wishGeo = track(new THREE.ExtrudeGeometry(starShape(0.3, 0.13), { depth: 0.07, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02, bevelSegments: 2 }));
+    wishGeo.center();
+    const wishMat = track(new THREE.MeshStandardMaterial({ color: 0xffeef6, roughness: 0.3, metalness: 0.05, emissive: 0xff9cc2, emissiveIntensity: 0.55 }));
+    const wishMap = new Map<number, W>();
+    const wishMeshes = () => Array.from(wishMap.values()).map((w) => w.m);
+    const syncWishes = (list: GbEntry[]) => {
+      const keep = new Set(list.map((e) => e.id));
+      wishMap.forEach((w, id) => { if (!keep.has(id)) { world.remove(w.m); wishMap.delete(id); } });
+      for (const e of list) {
+        if (wishMap.has(e.id)) { wishMap.get(e.id)!.e = e; continue; }
+        const h = hashId(e.id), h2 = hashId(e.id + 17);
+        const m = new THREE.Mesh(wishGeo, wishMat);
+        m.userData.wid = e.id; m.scale.setScalar(0.001); world.add(m);
+        wishMap.set(e.id, { m, e, r: 2.5 + h * 1.2, a: h2 * Math.PI * 2, v: (0.05 + h * 0.06) * (h2 > 0.5 ? 1 : -1), y: -2.1 + h2 * 4.3, s: 0.62 + h * 0.3, pop: 0, born: clock.getElapsedTime() });
+      }
+      need = 2;
+    };
+    const pickWish = (id: number) => {
+      const w = wishMap.get(id); if (!w) return;
+      w.pop = 1; need = 2;
+      blipRef.current(NOTES[id % NOTES.length]);
+      const wp = new THREE.Vector3(); w.m.getWorldPosition(wp); burst(wp, 0xff9cc2);
+      onWishRef.current(w.e);
+    };
 
     // drifting dust
     const N = 140, pos = new Float32Array(N * 3);
@@ -184,8 +230,9 @@ export default function DreamMobile() {
     // theme
     const applyTheme = () => {
       const n = isNight();
-      amb.intensity = n ? 0.45 : 0.9; key.intensity = n ? 0.9 : 1.4; warm.intensity = n ? 26 : 5;
-      glowMat.opacity = n ? 0.8 : 0.4; dustMat.opacity = n ? 0.9 : 0.35;
+      amb.intensity = n ? 0.45 : 0.9; key.intensity = n ? 0.9 : 1.4; warmBase = n ? 26 : 5; warm.intensity = warmBase;
+      glowBase = n ? 0.8 : 0.4; glowMat.opacity = glowBase; dustMat.opacity = n ? 0.9 : 0.35;
+      wishMat.emissiveIntensity = n ? 0.9 : 0.5;
       frameMat.color.set(n ? 0xf19abb : 0xf0b3c8);
       goldMat.emissiveIntensity = n ? 0.8 : 0.35;
       stars.forEach((s) => { s.hue.emissiveIntensity = n ? 0.85 : 0.3; });
@@ -229,11 +276,12 @@ export default function DreamMobile() {
       const r = canvas.getBoundingClientRect();
       nd.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
       ray.setFromCamera(nd, camera);
-      const h = ray.intersectObjects(stars.map((s) => s.m), false)[0];
-      return h ? (h.object.userData.i as number) : -1;
+      const h = ray.intersectObjects([...stars.map((s) => s.m), ...wishMeshes()], false)[0];
+      if (!h) return null;
+      return h.object.userData.wid !== undefined ? { wish: h.object.userData.wid as number } : { star: h.object.userData.i as number };
     };
-    const hover = (e: PointerEvent) => { if (e.pointerType === "mouse") canvas.style.cursor = hit(e) >= 0 ? "pointer" : "grab"; };
-    const tap = (e: PointerEvent) => { const i = hit(e); if (i >= 0) ring(i); };
+    const hover = (e: PointerEvent) => { if (e.pointerType === "mouse") canvas.style.cursor = hit(e) ? "pointer" : "grab"; };
+    const tap = (e: PointerEvent) => { const h = hit(e); if (!h) return; if (h.wish !== undefined) pickWish(h.wish); else ring(h.star); };
 
     const ring = (idx?: number) => {
       const i = idx ?? stars.findIndex((_, j) => !rungRef.current.has(j));
@@ -254,7 +302,7 @@ export default function DreamMobile() {
       setRec(nextReceipt(`Rang a ${NOTE_NAMES[j]} star on the dream mobile.`));
     };
     const turn = (d: number) => { tYaw = clamp(tYaw + d, -1.0, 1.0); need = 2; };
-    api.current = { ring, turn, setStill: (v) => { still_ = v; need = 2; } };
+    api.current = { ring, turn, setStill: (v) => { still_ = v; need = 2; }, wish: pickWish, syncWishes };
 
     canvas.style.cursor = "grab"; canvas.style.touchAction = "pan-y";
     canvas.addEventListener("pointerdown", down); canvas.addEventListener("pointermove", move);
@@ -283,8 +331,21 @@ export default function DreamMobile() {
         const sc = s.s * (1 + s.pop * 0.7) * (0.85 + 0.15 * k);
         s.m.scale.setScalar(sc);
         s.m.rotation.y += moving ? dt * 0.8 : 0; s.m.rotation.z = Math.sin(s.a * 2) * 0.2;
-        if (rungRef.current.has(stars.indexOf(s))) s.hue.emissiveIntensity = Math.max(s.hue.emissiveIntensity, isNight() ? 0.95 : 0.6);
+        s.flash = Math.max(0, s.flash - dt * 3.2);
+        const base = rungRef.current.has(stars.indexOf(s)) ? (isNight() ? 0.95 : 0.6) : (isNight() ? 0.85 : 0.3);
+        s.hue.emissiveIntensity = base + s.flash * 1.1;
       }
+      wishMap.forEach((w) => {
+        if (moving) w.a += w.v * dt;
+        const rr = w.r * k, grow = Math.min(1, (t - w.born) * 1.4);
+        w.m.position.set(Math.cos(w.a) * rr, w.y * (0.6 + 0.4 * k) + (moving ? Math.sin(t * 1.1 + w.a * 3) * 0.1 : 0), Math.sin(w.a) * rr * 0.9 - 0.2);
+        w.pop = Math.max(0, w.pop - dt * 2);
+        w.m.scale.setScalar(Math.max(0.001, w.s * (0.85 + 0.15 * k) * (1 + w.pop * 0.9) * (1 - (1 - grow) ** 3)));
+        w.m.rotation.y += moving ? dt * 0.6 : 0; w.m.rotation.z = Math.sin(w.a * 2) * 0.2;
+      });
+      glowPulse = Math.max(0, glowPulse - dt * 3);
+      glowMat.opacity = glowBase + glowPulse * 0.4;
+      warm.intensity = warmBase + glowPulse * Math.max(6, warmBase * 0.6);
       if (moving) dust.rotation.y += dt * 0.015;
       for (let i = bursts.length - 1; i >= 0; i--) {
         const b = bursts[i]; b.life -= dt * 1.4;
@@ -294,7 +355,8 @@ export default function DreamMobile() {
         if (b.life <= 0) { scene.remove(b.p); b.p.geometry.dispose(); (b.p.material as THREE.Material).dispose(); bursts.splice(i, 1); }
       }
       renderer.render(scene, camera);
-      const idle = !moving && !drag && bursts.length === 0 && Math.abs(tYaw - yaw) < 0.0005 && Math.abs(tPitch - pitch) < 0.0005 && stars.every((s) => s.pop === 0);
+      const idle = !moving && !drag && bursts.length === 0 && glowPulse === 0 && Math.abs(tYaw - yaw) < 0.0005 && Math.abs(tPitch - pitch) < 0.0005
+        && stars.every((s) => s.pop === 0 && s.flash === 0) && Array.from(wishMap.values()).every((w) => w.pop === 0 && (t - w.born) * 1.4 >= 1);
       if (idle && need <= 0) return; // fully still: stop drawing until something changes
       need = Math.max(0, need - 1);
       raf = requestAnimationFrame(frame);
@@ -309,6 +371,27 @@ export default function DreamMobile() {
     const onLost = (e: Event) => { e.preventDefault(); setFailed(true); };
     canvas.addEventListener("webglcontextlost", onLost);
 
+    // Lullaby notes: the matching star pulses in time and the whole scene breathes with the music.
+    const onNote = (e: Event) => {
+      const d = (e as CustomEvent<NoteDetail>).detail;
+      const s = stars[noteToStar(d.f, d.i)];
+      if (!s) return;
+      s.pop = 1; s.flash = 1; glowPulse = 1; need = 2;
+      if (visible && !document.hidden && !rm) { const wp = new THREE.Vector3(); s.m.getWorldPosition(wp); burst(wp, colors[stars.indexOf(s)]); }
+    };
+    // Lantern and lullaby tints light the scene in the same colour as the page wash.
+    const white = new THREE.Color(0xffffff);
+    const onTint = (e: Event | { detail: TintFinal }) => {
+      const hex = (e as { detail: TintFinal }).detail.hex;
+      glowMat.color.copy(white).lerp(new THREE.Color(hex ?? 0xffffff), hex === null ? 0 : 0.75);
+      warm.color.set(hex ?? 0xffc27a);
+      dustMat.color.set(0xffe6a8).lerp(new THREE.Color(hex ?? 0xffe6a8), hex === null ? 0 : 0.5);
+      need = 2;
+    };
+    addEventListener("pip:note", onNote);
+    addEventListener("pip:tint-final", onTint);
+    if (window.__pipTint?.hex) onTint({ detail: window.__pipTint });
+
     applyTheme(); resize();
 
     return () => {
@@ -316,6 +399,7 @@ export default function DreamMobile() {
       cancelAnimationFrame(raf); clearInterval(kicker);
       io.disconnect(); ro.disconnect(); mo.disconnect();
       document.removeEventListener("visibilitychange", vis);
+      removeEventListener("pip:note", onNote); removeEventListener("pip:tint-final", onTint);
       canvas.removeEventListener("pointerdown", down); canvas.removeEventListener("pointermove", move);
       canvas.removeEventListener("pointerup", up); canvas.removeEventListener("webglcontextlost", onLost);
       bursts.forEach((b) => { b.p.geometry.dispose(); (b.p.material as THREE.Material).dispose(); });
@@ -325,6 +409,17 @@ export default function DreamMobile() {
     };
   }, []);
 
+  // Wish wall: load approved guestbook notes, keep the scene in sync, and add new notes live.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/guestbook").then((r) => (r.ok ? r.json() : Promise.reject())).then((d: { entries?: GbEntry[] }) => { if (alive && d.entries) setWishes(d.entries.slice(0, 16)); }).catch(() => {});
+    const add = (e: Event) => { const en = (e as CustomEvent<GbEntry>).detail; if (en?.id) setWishes((cur) => [en, ...cur.filter((c) => c.id !== en.id)].slice(0, 16)); };
+    addEventListener("pip:wish", add);
+    return () => { alive = false; removeEventListener("pip:wish", add); };
+  }, []);
+  useEffect(() => { api.current?.syncWishes(wishes); }, [wishes, failed]);
+  const readWish = (w: GbEntry) => { setWishSel(w); api.current?.wish(w.id); };
+
   const toggleStill = () => { const v = !still; setStill(v); api.current?.setStill(v); };
 
   return (
@@ -332,7 +427,7 @@ export default function DreamMobile() {
       <div className="wrap">
         <p className="label">Tier 3 · in real 3D</p>
         <h2>Pip’s Dream Mobile</h2>
-        <p className="small" style={{ marginBottom: 16 }}>Drag to turn the nursery. Tap a star to ring it. Nine stars, nine notes.</p>
+        <p className="small" style={{ marginBottom: 16 }}>Drag to turn the nursery. Tap a gold star to ring it. Nine stars, nine notes. The small pink stars are wishes from the guestbook.</p>
         <div className="m3">
           <div className="m3-stage" ref={box} role="group" aria-label="Interactive 3D scene: Pip in an arched window with nine orbiting stars and a crescent moon">
             {failed && (
@@ -351,7 +446,26 @@ export default function DreamMobile() {
               <button className="chip" onClick={() => api.current?.ring()} disabled={failed}>Ring a star ✦</button>
               <button className="chip" aria-pressed={still} onClick={toggleStill} disabled={failed}>{still ? "Let it drift" : "Hold still"}</button>
             </div>
-            <p className="small">Turn on sound (top bar) to hear the chimes. Everything here also works with the buttons.</p>
+            <p className="small">Turn on sound (top bar) to hear the chimes. Play a lullaby above and the stars pulse in time with the notes.</p>
+            <div className="wishes">
+              <p className="label">Wish wall · {wishes.length} {wishes.length === 1 ? "wish" : "wishes"} floating</p>
+              {wishes.length === 0 ? (
+                <p className="small">No wishes yet. <a href="#guestbook">Leave a note</a> and it floats up here as a star.</p>
+              ) : (
+                <ul className="wish-list">
+                  {wishes.slice(0, 6).map((w) => (
+                    <li key={w.id}><button className="chip" aria-pressed={wishSel?.id === w.id} onClick={() => readWish(w)}>✧ {w.display_name}</button></li>
+                  ))}
+                </ul>
+              )}
+              {wishSel && (
+                <div className="wish-card" role="status" aria-live="polite">
+                  <p><b>{wishSel.display_name}</b> wished:</p>
+                  <p className="wish-msg">{wishSel.message}</p>
+                  <Reactions id={wishSel.id} name={wishSel.display_name} stars={wishSel.stars} hearts={wishSel.hearts} />
+                </div>
+              )}
+            </div>
             <Receipt r={rec} />
           </div>
         </div>

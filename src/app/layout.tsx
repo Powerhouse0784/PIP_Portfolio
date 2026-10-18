@@ -9,6 +9,9 @@ import PipReactions from "@/components/PipReactions";
 import CommandPalette from "@/components/CommandPalette";
 import SiteHeader from "@/components/SiteHeader";
 import Intro from "@/components/Intro";
+import Atmosphere from "@/components/Atmosphere";
+import SoundPrompt from "@/components/SoundPrompt";
+import ScrollFX from "@/components/ScrollFX";
 
 const serif = Fraunces({ subsets: ["latin"], axes: ["opsz"], display: "swap", variable: "--font-serif" });
 const ui = Fredoka({ subsets: ["latin"], display: "swap", variable: "--font-ui" });
@@ -36,7 +39,7 @@ export const viewport: Viewport = {
 // Apply the saved theme before first paint to avoid a flash.
 const themeInit = `try{var t=localStorage.getItem("pip-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}`;
 // First visit in this tab (no #deep-link, no ?intro=0): flag the opening scene before first paint so there is no flash of the page behind it.
-const introInit = `try{if(!sessionStorage.getItem("pip-intro-seen")&&!location.hash&&!/[?&]intro=0/.test(location.search))document.documentElement.dataset.intro="on"}catch(e){}`;
+const introInit = `try{if(location.pathname==="/"&&!sessionStorage.getItem("pip-intro-seen")&&!location.hash&&!/[?&]intro=0/.test(location.search))document.documentElement.dataset.intro="on"}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -48,6 +51,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <noscript><style>{".scene{opacity:1!important;transform:none!important}"}</style></noscript>
         <a className="skip" href="#top">Skip to content</a>
         <StarField />
+        <Atmosphere />
+        <ScrollFX />
         <AudioProvider>
           <SiteHeader />
           {children}
@@ -55,6 +60,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <PipChat />
           <PipReactions />
           <Intro />
+          <SoundPrompt />
         </AudioProvider>
       </body>
     </html>

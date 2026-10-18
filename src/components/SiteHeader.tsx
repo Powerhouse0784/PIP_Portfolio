@@ -7,7 +7,7 @@ const LINKS: [string, string][] = [
   ["about", "About"], ["projects", "Projects"], ["story", "My Story"], ["guestbook", "Guestbook"],
 ];
 const MORE: [string, string][] = [
-  ["storybook", "Bedtime storybook"], ["toys", "Rattle & block toys"], ["growth", "Growth chart"], ["catcher", "Catch the dreams"], ["dreammaker", "Make a dream"],
+  ["storybook", "Bedtime storybook"], ["toys", "Rattle & block toys"], ["growth", "Growth chart"], ["catcher", "Catch the dreams"], ["daily", "Tonight’s dream card"], ["dreammaker", "Make a dream"],
 ];
 
 export default function SiteHeader() {

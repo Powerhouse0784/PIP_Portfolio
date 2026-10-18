@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { aiConfigured, clean, generate, PIP_CANON } from "@/lib/llm";
+import { chatSpark } from "@/lib/sparks";
+import { FEEL_LIST, inferFeel, isFeel } from "@/lib/feel";
 import { CHAT, checkLimit, visitorKey } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Sections Pip is allowed to point visitors to. Anything else the model invents is dropped. */
-const SECTIONS = ["about", "projects", "storybook", "toys", "growth", "catcher", "darkroom", "dreammaker", "mobile3d", "story", "guestbook"] as const;
+const SECTIONS = ["about", "projects", "storybook", "toys", "growth", "catcher", "darkroom", "dreammaker", "mobile3d", "story", "guestbook", "daily"] as const;
 
 const schema = z.object({
   messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(300) })).min(1).max(8),
@@ -15,7 +17,8 @@ const schema = z.object({
 
 const SYSTEM = `${PIP_CANON}
 Reply in 1 to 3 short sentences (under 45 words). Stay in character as Pip. You may use one *giggle* or *yawn* style action.
-This website has these places you can point people to: ${SECTIONS.join(", ")}. If the visitor would enjoy one of them, end your reply with a tag like {go:toys} using exactly one id from that list. Only add a tag when it genuinely fits.`;
+This website has these places you can point people to: ${SECTIONS.join(", ")}. If the visitor would enjoy one of them, end your reply with a tag like {go:toys} using exactly one id from that list. Only add a tag when it genuinely fits.
+Always finish with one more tag, {mood:X}, where X is exactly one of: ${FEEL_LIST.join(", ")}. It is the feeling your reply expresses (giggly for jokes and tickles, sleepy for yawns, curious for questions, proud when talking about your work, shy when complimented or teased, happy otherwise).`;
 
 export async function POST(request: Request) {
   if (!aiConfigured()) return NextResponse.json({ unavailable: true });
@@ -38,12 +41,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const out = await generate({ system: SYSTEM, turns, maxTokens: 160, temperature: 0.9 });
+  const out = await generate({ system: `${SYSTEM}\n${chatSpark()}`, turns, maxTokens: 160, temperature: 0.9 });
   if (!out) return NextResponse.json({ unavailable: true });
 
   const tag = out.match(/\{go:([a-z0-9]+)\}/i)?.[1]?.toLowerCase();
   const go = SECTIONS.find((s) => s === tag);
-  const reply = clean(out.replace(/\{go:[^}]*\}/gi, ""), 260);
+  const moodTag = out.match(/\{mood:([a-z]+)\}/i)?.[1]?.toLowerCase();
+  const reply = clean(out.replace(/\{(go|mood):[^}]*\}/gi, ""), 260);
   if (!reply) return NextResponse.json({ unavailable: true });
-  return NextResponse.json({ reply, go: go ?? null });
+  return NextResponse.json({ reply, go: go ?? null, mood: isFeel(moodTag) ? moodTag : inferFeel(reply) });
 }

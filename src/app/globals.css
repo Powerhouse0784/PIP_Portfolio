@@ -571,3 +571,102 @@ html[data-intro="on"] .intro{display:block}
   .intro,.intro.leaving{transform:none}
 }
 @media print{.intro{display:none!important}}
+
+/* ---------- v14: mood-reactive scenery, tonight's sky, daily dream, reactions, wish wall, moderation, Pip's expressions ---------- */
+@property --mood-c{syntax:"<color>";inherits:true;initial-value:transparent}
+.mood{position:fixed;inset:0;z-index:0;pointer-events:none;--mood-c:transparent;opacity:.85;transition:--mood-c 1.4s ease,opacity .6s ease;
+  background:radial-gradient(80vmax 60vmax at 50% 18%,var(--mood-c),transparent 70%),radial-gradient(70vmax 50vmax at 88% 92%,var(--mood-c),transparent 72%)}
+.mood.beat{opacity:1;transition:--mood-c 1.4s ease,opacity .08s linear}
+@media print{.mood{display:none!important}}
+
+/* welcome back, sound on? */
+.soundask{position:fixed;left:50%;translate:-50% 0;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);z-index:85;width:min(440px,calc(100vw - 32px));display:grid;gap:12px;
+  background:var(--surface);color:var(--text);border:2px solid var(--accent);border-radius:20px;padding:16px 18px;box-shadow:0 20px 60px rgba(0,0,0,.28);animation:soundin .5s cubic-bezier(.2,.8,.2,1) both}
+.soundask p{margin:0}.soundask div{display:flex;flex-wrap:wrap;gap:10px}
+@keyframes soundin{from{opacity:0;transform:translateY(16px)}}
+
+/* tonight's real sky */
+.hero-notes{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-start;margin-top:20px}
+.hero-notes .greet{margin-top:0}
+.tonight{display:flex;gap:14px;align-items:center;min-height:84px;min-width:min(100%,300px);max-width:420px;background:linear-gradient(135deg,#1d1730,#2c2147);color:#fff0e5;border:1px solid rgba(255,226,160,.28);border-radius:20px;padding:12px 18px 12px 14px;box-shadow:0 14px 40px var(--glow)}
+.tonight>div{display:grid;gap:1px;min-width:0}
+.tonight p{margin:0}
+.tn-k{font:600 .7rem var(--ui);letter-spacing:.14em;text-transform:uppercase;color:#f19abb}
+.tn-moon{font:500 .98rem var(--ui)}.tn-moon b{color:#f6d98a}
+.tn-next{font:500 .84rem var(--ui);color:#d3b7c3}
+.tn-hello{font:italic 500 .92rem var(--serif);color:#f0dfe8;margin-top:4px}
+.tn-wait{display:block;width:100%;height:56px}
+.moonphase{flex:0 0 auto}
+
+/* daily dream card */
+.daily{display:grid;justify-items:center}
+.dcard{position:relative;width:min(640px,100%);display:grid;gap:12px;justify-items:start;background:linear-gradient(160deg,#1b1540,#2e2350 60%,#4a3563);color:#fff0e5;border:1px solid rgba(255,226,160,.3);border-radius:28px;padding:clamp(22px,4vw,36px);box-shadow:0 30px 80px var(--glow);overflow:hidden}
+.dcard::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(1.2px 1.2px at 12% 18%,#fff,transparent),radial-gradient(1.6px 1.6px at 78% 26%,#ffe6a8,transparent),radial-gradient(1.2px 1.2px at 64% 80%,#fff,transparent),radial-gradient(1.4px 1.4px at 30% 72%,#f7c1d6,transparent),radial-gradient(1px 1px at 90% 62%,#fff,transparent);opacity:.8}
+.dcard>*{position:relative}
+.dcard h3{font-size:clamp(1.5rem,4vw,2.1rem);margin:0;color:#fff0e5}
+.dcard p{margin:0;color:#f0dfe8}.dcard .label{color:#f19abb}.dcard .small{color:#d3b7c3}
+.dcard .moonphase{margin-bottom:4px}
+.dcard .gform{width:100%;background:rgba(255,255,255,.07);border-color:rgba(255,226,160,.25)}
+.dcard .gform label{color:#f0dfe8}
+.dcard .err,.dcard .small[role="status"]{color:#ffd88a}
+
+/* reactions */
+.reacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.react{min-height:44px;min-width:64px;padding:0 14px;border-radius:999px;border:2px solid var(--border);background:transparent;color:var(--text);font:600 .92rem var(--ui);cursor:pointer;display:inline-flex;gap:6px;align-items:center;justify-content:center;transition:transform .15s,background .2s,border-color .2s}
+.react:hover{transform:translateY(-1px);border-color:var(--accent)}
+.react[aria-pressed="true"]{border-color:var(--accent);background:var(--glow);color:var(--accent)}
+.gl li .reacts{margin-top:8px}
+
+/* wish wall */
+.wishes{margin-top:14px;display:grid;gap:10px}
+.wish-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.wish-card{background:var(--surface);border:1px dashed var(--accent);border-radius:16px;padding:14px 16px;display:grid;gap:4px}
+.wish-card p{margin:0}.wish-msg{font:italic 500 1.02rem var(--serif);color:var(--text)}
+
+/* guestbook moderation */
+.admin-wrap{padding:56px 0 96px}
+.admin-h{font-size:clamp(1.8rem,5vw,2.6rem);margin:0 0 20px}
+.admin-login{max-width:420px}
+.admin-bar{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center}
+.admin-list{list-style:none;margin:12px 0 24px;padding:0;display:grid;gap:12px}
+.admin-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px 18px}
+.admin-row>div:first-child{flex:1 1 280px;min-width:0}
+.admin-row p{margin:0}
+.admin-msg{margin-top:6px!important;overflow-wrap:anywhere}
+.admin-acts{display:flex;flex-wrap:wrap;gap:8px}
+.admin-empty{background:var(--surface);border:1px dashed var(--border);border-radius:18px;padding:24px;text-align:center;color:var(--muted)}
+.chip.danger{border-color:#c0392b;color:#c0392b}
+body:has(.admin-wrap) nav a.l,body:has(.admin-wrap) .chat,body:has(.admin-wrap) .pipsay,body:has(.admin-wrap) .ib{display:none}
+
+/* Pip's expressions (from the chat): soft overlays on top of the official art, never a redraw of it */
+.stage .glint{scale:var(--gs,1);transition:opacity .6s,scale .35s ease}
+.stage[data-feel] .glint{opacity:1}
+.stage[data-feel="happy"]{--gs:1.3}.stage[data-feel="giggly"]{--gs:1.2}.stage[data-feel="curious"]{--gs:1.15}.stage[data-feel="proud"]{--gs:1.6}.stage[data-feel="shy"]{--gs:.85}.stage[data-feel="sleepy"]{--gs:.45}
+.stage[data-feel="sleepy"] .glint{opacity:.35}
+.blush{position:absolute;width:13%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(255,140,175,.6),rgba(255,140,175,0) 70%);opacity:0;transition:opacity .5s}
+.stage[data-feel="shy"] .blush,.stage[data-feel="giggly"] .blush,.stage[data-feel="happy"] .blush{opacity:.85}
+.stage[data-feel="giggly"]{animation:giggle .5s 2}
+.fx{position:absolute;pointer-events:none;color:#f2c56b;font:700 clamp(15px,2.6vw,22px) var(--ui);text-shadow:0 0 10px rgba(255,214,140,.9);animation:fxrise 2.2s ease-out forwards}
+@keyframes fxrise{from{opacity:0;transform:translate(0,10px) scale(.6)}20%{opacity:1}to{opacity:0;transform:translate(var(--dx,0),-70px) scale(1.15)}}
+.chat-mood{margin:0;display:flex;gap:8px;align-items:center;font:600 .85rem var(--ui);color:var(--muted);padding:2px 4px}
+.chat-mood span{font-size:1.2rem;display:inline-block}
+.chat-mood:not([data-feel="idle"]) span{animation:moodpop .6s}
+@keyframes moodpop{from{transform:scale(.4) rotate(-20deg)}60%{transform:scale(1.3)}}
+
+@media (max-width:480px){.hero-notes{flex-direction:column;align-items:stretch}.tonight{max-width:none}.admin-acts{width:100%}.admin-acts>*{flex:1}}
+
+/* ---- v15: scroll choreography ---- */
+html.fx-ready [data-fx]{opacity:0;transition:opacity .8s ease,translate .9s cubic-bezier(.2,.7,.2,1),scale .9s cubic-bezier(.2,.7,.2,1),transform .35s,box-shadow .35s;transition-delay:calc(var(--i,0)*80ms),calc(var(--i,0)*80ms),calc(var(--i,0)*80ms),0s,0s}
+html.fx-ready [data-fx="rise"]{translate:0 36px}
+html.fx-ready [data-fx="left"]{translate:-48px 0}
+html.fx-ready [data-fx="zoom"]{scale:.94;translate:0 28px}
+html.fx-ready [data-fx].fx-in{opacity:1;translate:none;scale:none}
+.hero-zone .moon,.hero-zone .orbit,.hero-zone .cl{translate:0 calc(var(--py,0)*1px)}
+.scroll-cue{position:absolute;left:50%;bottom:14px;translate:-50% 0;z-index:2;display:grid;justify-items:center;gap:2px;font:500 .8rem var(--ui);letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:var(--muted);animation:cue 2.2s ease-in-out infinite;transition:opacity .4s}
+html.scrolled .scroll-cue{opacity:0;pointer-events:none}
+@keyframes cue{50%{transform:translateY(7px)}}
+html::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(70vmax 50vmax at calc(15% + var(--sp,0)*70%) calc(8% + var(--sp,0)*80%),hsl(calc(345 - var(--sp,0)*95) 85% 82% / .26),transparent 70%)}
+:root[data-theme="night"]::before{background:radial-gradient(70vmax 50vmax at calc(15% + var(--sp,0)*70%) calc(8% + var(--sp,0)*80%),hsl(calc(285 - var(--sp,0)*45) 70% 42% / .28),transparent 70%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="day"]):not([data-theme="night"])::before{background:radial-gradient(70vmax 50vmax at calc(15% + var(--sp,0)*70%) calc(8% + var(--sp,0)*80%),hsl(calc(285 - var(--sp,0)*45) 70% 42% / .28),transparent 70%)}}
+@media (max-width:700px){.scroll-cue{display:none}}
+@media print{html::before{display:none!important}}

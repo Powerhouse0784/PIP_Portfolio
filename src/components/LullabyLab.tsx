@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAudio } from "./Providers";
 import Receipt from "./Receipt";
 import { nextReceipt, type R } from "@/lib/receipt";
+import { noteEvent, tint, type TintName } from "@/lib/tint";
 
 /** "Sleepy" plays the music-box melody from the official audio pack; Brave and Cloudy are synthesized live with Web Audio. */
 const SAMPLE_SECONDS = 6.4;
@@ -29,6 +30,7 @@ export default function LullabyLab() {
     oscs.current.forEach((o) => { try { o.stop(); } catch {} });
     oscs.current = [];
     stopSound("lullaby");
+    tint("music", null);
     setPlaying(false);
     setIdx(-1);
   };
@@ -41,6 +43,7 @@ export default function LullabyLab() {
     const total = m.f.length * m.t;
     if (!on) setOn(true); // pressing play is an explicit opt-in; runs inside the click so the browser allows it
     setPlaying(true);
+    tint("music", mood as TintName); // the whole page glows in the lullaby's mood while it plays
 
     if (m.sample) {
       playSound("lullaby");
@@ -65,7 +68,8 @@ export default function LullabyLab() {
         oscs.current.push(o);
       });
     }
-    m.f.forEach((_, i) => timers.current.push(window.setTimeout(() => setIdx(i), i * m.t * 1000)));
+    // Each note also pulses the page wash and the 3D stars (see Atmosphere and DreamMobile).
+    m.f.forEach((f, i) => timers.current.push(window.setTimeout(() => { setIdx(i); noteEvent({ i, f, mood }); }, i * m.t * 1000)));
     timers.current.push(window.setTimeout(stop, total * 1000 + 300));
     setRecipe(`Dream recipe: ${m.label} mood · ${m.f.length} notes · ${total.toFixed(1)} seconds`);
     setRec(nextReceipt(`Delivered: one ${m.label.toLowerCase()} lullaby, ${m.f.length} notes.`));

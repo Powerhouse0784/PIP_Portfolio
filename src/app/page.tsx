@@ -1,8 +1,9 @@
-import { LazyCatcher, LazyDarkRoom, LazyDreamMaker, LazyDreamMobile, LazyStorybook, LazyToys, LazyGrowthChart, LazyGuestbook } from "@/components/Lazy";
+import { LazyCatcher, LazyDarkRoom, LazyDreamMaker, LazyDreamMobile, LazyDailyDream, LazyStorybook, LazyToys, LazyGrowthChart, LazyGuestbook } from "@/components/Lazy";
 import LullabyLab from "@/components/LullabyLab";
 import Lanterns from "@/components/Lanterns";
 import DeliveryRoute from "@/components/DeliveryRoute";
 import Greeting from "@/components/Greeting";
+import TonightSky from "@/components/TonightSky";
 import ChaosToggle from "@/components/ChaosToggle";
 import Story from "@/components/Story";
 import EasterEgg from "@/components/EasterEgg";
@@ -33,7 +34,7 @@ export default function Home() {
             <p className="lede">Hello, sleepyhead! I’m Pip, a tiny dream engineer with big ideas and a very important bedtime job.</p>
             <a className="btn" href="#projects">Explore my little world →</a>
             <StatsStrip />
-            <Greeting />
+            <div className="hero-notes"><Greeting /><TonightSky /></div>
           </div>
           <div style={{ position: "relative" }}>
             <div className="orbit" aria-hidden="true"><i>✦</i><i>✧</i><i>✦</i></div>
@@ -45,6 +46,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+        <a className="scroll-cue" href="#about" aria-label="Scroll down to meet Pip"><span>scroll</span><span aria-hidden="true">↓</span></a>
       </div>
 
       <div className="marquee" aria-hidden="true">
@@ -128,6 +130,7 @@ export default function Home() {
       <LazyDreamMobile />
       <LazyCatcher />
       <LazyDarkRoom />
+      <LazyDailyDream />
       <LazyDreamMaker />
       <Story />
       <LazyGuestbook />

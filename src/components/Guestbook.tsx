@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import { say } from "@/lib/pipSay";
+import Reactions from "./Reactions";
+import type { GbEntry } from "@/lib/guestbookTypes";
 
-type Entry = { id: number; display_name: string; message: string; created_at: string };
+type Entry = GbEntry;
 type Status = "idle" | "sending" | "ok" | "error";
 
 export default function Guestbook() {
@@ -32,7 +34,10 @@ export default function Guestbook() {
       });
       const data = (await res.json()) as { entry?: Entry; error?: string; pending?: boolean };
       if (!res.ok) throw new Error(data.error ?? "Something went wrong.");
-      if (data.entry) setEntries((cur) => [data.entry as Entry, ...(cur ?? [])]);
+      if (data.entry) {
+        setEntries((cur) => [data.entry as Entry, ...(cur ?? [])]);
+        window.dispatchEvent(new CustomEvent("pip:wish", { detail: data.entry })); // a new star floats up in the 3D wish wall
+      }
       form.reset();
       say(data.pending ? "A note! I’ll pin it up soon." : "A new note! Pinned it up.");
       setStatus("ok");
@@ -48,6 +53,7 @@ export default function Guestbook() {
       <div className="wrap">
         <p className="label">Leave a little note</p>
         <h2>Nursery guestbook</h2>
+        <p className="small" style={{ marginBottom: 16 }}>Every kind note becomes a star in the <a href="#mobile3d">wish wall</a> of Pip’s 3D dream mobile. Send a star or a heart to the ones you like.</p>
         <div className="gb">
           <form onSubmit={submit} className="gform">
             <label htmlFor="gname">Your name</label>
@@ -63,7 +69,7 @@ export default function Guestbook() {
             {entries === null && <li>Loading notes…</li>}
             {entries?.length === 0 && <li>{loadError ? "The guestbook is sleeping right now. Try again later." : "No notes yet. Be the first!"}</li>}
             {entries?.map((en) => (
-              <li key={en.id}><b>{en.display_name}</b><span>{en.message}</span></li>
+              <li key={en.id}><b>{en.display_name}</b><span>{en.message}</span><Reactions id={en.id} name={en.display_name} stars={en.stars} hearts={en.hearts} /></li>
             ))}
           </ul>
         </div>

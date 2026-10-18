@@ -12,7 +12,7 @@ npm run dev                  # http://localhost:3000
 
 ## Supabase (guestbook + counter)
 1. Create a project at supabase.com.
-2. SQL Editor: paste and run `supabase/schema.sql`.
+2. SQL Editor: paste and run `supabase/schema.sql`. **Already running v13?** Run `supabase/migration-v14.sql` instead (safe to re-run): it adds reactions and the moderation stamp. Until you do, notes still load, but stars/hearts and moderation show a clear error.
 3. Put `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` and in Vercel (Production) env vars. Redeploy after adding them.
 The service-role key is server-only. Never prefix it with `NEXT_PUBLIC_` and never commit `.env.local`.
 Without these variables the site still works; the guestbook shows "sleeping" and the counter is hidden.
@@ -20,7 +20,10 @@ Without these variables the site still works; the guestbook shows "sleeping" and
 ## Make Pip talk back (optional, free API keys)
 Add either or both to `.env.local` and to Vercel (Production), then redeploy:
 - `GEMINI_API_KEY` from aistudio.google.com/apikey (tried first)
-- `GROQ_API_KEY` from console.groq.com/keys (used if Gemini fails or is unset)
+- `XAI_API_KEY` (or `GROK_API_KEY`) from console.x.ai: xAI Grok, tried second. Default model `grok-4.3`; override with `XAI_MODEL`.
+- `GROQ_API_KEY` from console.groq.com/keys (Groq, a different company from xAI; used last). Note: a Grok key does NOT work as `GROQ_API_KEY`.
+
+Every request also gets a small server-side "creative spark" (random props, tone and a conversational move from fixed lists in `lib/sparks.ts`) so replies and dreams differ each time.
 
 With a key, the chat bubble answers in Pip's voice (and can offer a "Take me to the toys" jump link) and the Dream Maker writes a fresh dream each time. Without keys, or if a provider is down or rate-limited, both quietly fall back to the hand-written rules and recipe book. Keys are server-only; `/api/chat` and `/api/dream` validate input with zod, cap lengths, rate-limit per visitor (Upstash if configured) and only allow a whitelist of section ids in jump links.
 
@@ -44,6 +47,12 @@ Sound is off until the visitor opts in (top-bar ♪ or pressing Play in the Lull
 - **AI Pip**: see above. Optional voice toggle in the chat uses the browser's speech synthesis (off by default).
 
 ## Little extras
+- **Remembers your sound choice**: turning sound on or off is saved. A returning visitor who left it on gets a small "Welcome back, sound on?" prompt (after the intro, once per tab). Browsers still need that click, so nothing ever auto-plays.
+- **Mood-reactive scenery**: the lantern you pick tints the whole page; the Lullaby Lab tints it in the lullaby's mood and pulses it with every note. The same colour lights the 3D dream mobile, and the matching star pulses in time with each note (`lib/tint.ts`, `components/Atmosphere.tsx`).
+- **Tonight's real sky**: the true moon phase (mean synodic month, about half a day accurate) and a time-of-day greeting, computed in the browser from the clock. No API, nothing sent anywhere (`lib/sky.ts`).
+- **Daily dream card**: one AI-written dream per browser per day, woven around tonight's moon, remembered until midnight (a refresh never spends another), with a dream-diary night counter and a shareable 1080x1350 picture card. Falls back to Pip's recipe book offline.
+- **Guestbook reactions and wish wall**: a star and a heart per note (one of each per visitor, enforced in Postgres). Every approved note also floats as a small pink star in the 3D scene; tap one, or pick it from the wish list, to read it. New notes join live.
+- **Pip's mood from the chat**: the AI reply carries a mood tag (happy, sleepy, giggly, curious, proud, shy; validated against a whitelist, with a words-based fallback and the rule book offline). The hero art reacts with eye glints, blush and sparkles for a few seconds, the chat shows how he feels, and the chat button changes face.
 - **Cinematic intro** (`components/Intro.tsx`): on a first visit in a tab, a starry-sky scene with a three-layer parallax sky, drifting clouds, a swaying glowing lantern and Pip rising into an arched window, then **Enter the Dream Workshop** (or **Enter with sound ♪**). **Skip intro** and `Esc` leave at once; reduced motion gets a calm still frame. Pure CSS/SVG (no new libraries or images), shown once per tab session, skipped for `#deep-links` and `?intro=0`; the footer has **Replay the intro**.
 - **Jump menu** (`✦ Jump` button or the `/` key): go to any section, toggle themes, or run the secret command.
 - **Pip's speech bubble**: reacts to theme, sound, chaos mode, pokes, toys and the guestbook; dozes off after 45 s idle; the tab title waits for you.
@@ -61,7 +70,7 @@ Sound is off until the visitor opts in (top-bar ♪ or pressing Play in the Lull
 
 ## Before public launch
 - Guestbook: add `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` for a durable rate limiter (falls back to memory without them). Links are rejected server-side.
-- Moderation: set `GUESTBOOK_MODERATION=pending` to hold new notes until you flip `is_approved` in Supabase.
+- Moderation: set `GUESTBOOK_MODERATION=pending` to hold new notes until you approve them at `/admin/guestbook`. Set `GUESTBOOK_ADMIN_TOKEN` to a long random string (16+ characters, e.g. `openssl rand -base64 24`) in Vercel; open the page, paste the token, and approve / hide / delete. The token is sent in an `Authorization` header (never a URL), kept only in that tab, compared in constant time, and a visitor who gets it wrong 10 times is locked out for an hour. The page is `noindex` and disallowed in `robots.txt`.
 - Keep the asset credit in the footer.
 
 ## Quality notes

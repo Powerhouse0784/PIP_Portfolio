@@ -12,6 +12,7 @@ const CMDS: Cmd[] = [
   { id: "storybook", label: "Bedtime storybook", hint: "Go to", keys: "story book pages bedtime read", run: go("storybook") },
   { id: "toys", label: "Rattle & block toys", hint: "Play", keys: "toys blocks tower rattle stack", run: go("toys") },
   { id: "growth", label: "Pip’s growth chart", hint: "Go to", keys: "growth chart height skills wall", run: go("growth") },
+  { id: "daily", label: "Tonight’s dream card", hint: "Go to", keys: "daily dream card moon tonight diary", run: go("daily") },
   { id: "dream", label: "Make me a dream", hint: "Go to", keys: "dream maker story generate", run: go("dreammaker") },
   { id: "story", label: "How Pip became a dream engineer", hint: "Go to", keys: "story origin scenes", run: go("story") },
   { id: "guestbook", label: "Sign the guestbook", hint: "Go to", keys: "guestbook note message", run: go("guestbook") },

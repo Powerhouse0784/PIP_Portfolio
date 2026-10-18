@@ -14,6 +14,10 @@ export type Policy = { name: string; cooldown: number; perHour: number };
 export const GUESTBOOK: Policy = { name: "gb", cooldown: 20, perHour: 5 };
 export const CHAT: Policy = { name: "chat", cooldown: 2, perHour: 40 };
 export const DREAM: Policy = { name: "dream", cooldown: 6, perHour: 12 };
+export const DAILY: Policy = { name: "daily", cooldown: 8, perHour: 6 };
+export const REACT: Policy = { name: "react", cooldown: 1, perHour: 120 };
+/** Counted only when a moderation login fails, so real moderators are never slowed down. */
+export const ADMIN_FAIL: Policy = { name: "admfail", cooldown: 1, perHour: 10 };
 
 const mem = new Map<string, { last: number; hits: number[] }>();
 
@@ -61,4 +65,21 @@ export async function checkLimit(key: string, policy: Policy = GUESTBOOK): Promi
   s.last = now; s.hits.push(now); mem.set(mk, s);
   if (mem.size > 5000) mem.clear();
   return { ok: true };
+}
+
+/** Read-only: has this visitor used up a policy's hourly allowance? (Does not count as an attempt.) */
+export async function lockedOut(key: string, policy: Policy): Promise<boolean> {
+  const { name, perHour } = policy;
+  if (durableLimiter) {
+    try {
+      const [r] = await upstash([["GET", `${name}:hour:${key}`]]);
+      return Number(r.result ?? 0) >= perHour;
+    } catch (e) {
+      console.error(`[${name}] limiter unavailable, falling back to memory:`, e);
+    }
+  }
+  const s = mem.get(`${name}:${key}`);
+  if (!s) return false;
+  const now = Date.now();
+  return s.hits.filter((t) => now - t < 3_600_000).length >= perHour;
 }

@@ -20,15 +20,16 @@ const LINK = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|ru|xyz|top|biz|in
 // GUESTBOOK_MODERATION=pending -> new notes wait for approval (flip is_approved in Supabase).
 const MODERATED = process.env.GUESTBOOK_MODERATION === "pending";
 
+const PUBLIC_COLS = "id, display_name, message, created_at, stars, hearts";
+const LEGACY_COLS = "id, display_name, message, created_at";
+
 export async function GET() {
   const db = getAdmin();
   if (!db) return NextResponse.json({ entries: [], unavailable: true });
-  const { data, error } = await db
-    .from("guestbook_entries")
-    .select("id, display_name, message, created_at")
-    .eq("is_approved", true)
-    .order("created_at", { ascending: false })
-    .limit(30);
+  const q = (cols: string) => db.from("guestbook_entries").select(cols).eq("is_approved", true).order("created_at", { ascending: false }).limit(30);
+  let { data, error } = await q(PUBLIC_COLS);
+  // A database that hasn't run supabase/migration-v14.sql yet has no reaction columns: still serve the notes.
+  if (error?.code === "42703") ({ data, error } = await q(LEGACY_COLS));
   if (error) {
     console.error("[guestbook:get]", error.code, error.message);
     return NextResponse.json({ entries: [], unavailable: true }); // 200 keeps the browser console clean

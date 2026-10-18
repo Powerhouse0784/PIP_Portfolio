@@ -111,6 +111,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const setOn = useCallback((v: boolean) => {
     onRef.current = v;
     setOnState(v);
+    try { localStorage.setItem("pip-sound", v ? "on" : "off"); } catch {} // remembered for the "welcome back, sound on?" prompt
     if (v) {
       try {
         const a = el("ambience"); a.loop = true; a.volume = 0;
