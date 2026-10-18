@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { unlock } from "@/lib/progress";
 
 import DreamArt from "./DreamArt";
 import { FEELINGS, recipe, type Dream, type Feeling } from "@/lib/dreamRecipes";
@@ -29,6 +30,7 @@ export default function DreamMaker() {
     } catch { /* offline: use the recipe book */ }
     setShownFeeling(feeling);
     setDream(out ?? recipe(who, feeling));
+    unlock("dream");
     lock.current = false; setBusy(false);
   };
 
@@ -38,6 +40,7 @@ export default function DreamMaker() {
     try {
       if (navigator.share) await navigator.share({ title: dream.title, text });
       else { await navigator.clipboard.writeText(text); setNote("Copied! Share it with someone sleepy."); }
+      unlock("share");
     } catch { setNote("Couldn’t share just now. Try selecting the text."); }
   };
 

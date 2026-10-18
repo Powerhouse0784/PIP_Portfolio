@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { createSpeaker, stopSpeaking } from "@/lib/pipVoice";
+import { unlock } from "@/lib/progress";
 import { useAudio } from "./Providers";
 import { FEELS, feel, inferFeel, isFeel, type Feel } from "@/lib/feel";
 import { isAct, parseCommand, perform, type Act } from "@/lib/pipAct";
@@ -68,6 +70,7 @@ export default function PipChat() {
   const [canListen, setCanListen] = useState(false);
   const [listening, setListening] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState("");
+  const voiceRef = useRef(false);
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   const listenWanted = useRef(false);
   const end = useRef<HTMLDivElement>(null);
@@ -104,7 +107,9 @@ export default function PipChat() {
           "not-allowed": "Microphone permission was blocked. Allow it in your browser settings and try again.",
           "service-not-allowed": "Your browser blocked speech recognition.",
           "no-speech": "I didn’t hear anything. Try again when you’re ready.",
-          "audio-capture": "I can’t find a working microphone."
+          "audio-capture": "I can’t find a working microphone.",
+          "network": "Voice input can’t reach the speech service (offline, or this browser blocks it). You can type instead.",
+          "aborted": "Microphone paused."
         };
         setVoiceStatus(messages[event.error] ?? "Voice input stopped. You can type to Pip instead.");
       };
@@ -114,23 +119,17 @@ export default function PipChat() {
     return () => { try { recognition.current?.abort(); speechSynthesis.cancel(); } catch {} };
   }, []);
 
-  /** Optional spoken voice (browser speech, no audio files). Off until the visitor asks for it. */
-  const speak = (text: string) => {
-    if (!voice || !canTalk) return;
-    try {
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text.replace(/\*[^*]+\*/g, ""));
-      u.pitch = 1.7; u.rate = 0.95; u.volume = 0.8;
-      speechSynthesis.speak(u);
-    } catch {}
-  };
+  voiceRef.current = voice; // ask() runs from a mount-once voice recogniser, so it reads the latest setting from a ref
 
   const ask = async (text: string) => {
     const t = text.trim().slice(0, 120);
     if (!t || busyRef.current) return;
     busyRef.current = true; setBusy(true); setLive(false); setQ("");
+    unlock("chat");
     const history = [...msgs, { me: true, text: t }];
     setMsgs(history);
+    // Pip speaks each sentence the moment it is written, not after the whole answer (only if his voice is on).
+    const sp = voiceRef.current && canTalk ? createSpeaker("happy") : null;
 
     let reply = "", go: string | null = null, m: Feel | null = null, act: Act | null = null, started = false;
     // Words appear as Pip writes them. The streaming bubble is hidden from screen readers; the finished reply is announced once.
@@ -157,7 +156,7 @@ export default function PipChat() {
             if (!line) continue;
             let ev: { d?: string; done?: boolean } & Final;
             try { ev = JSON.parse(line); } catch { continue; }
-            if (typeof ev.d === "string") { typed += ev.d; showLive(typed.trimStart()); }
+            if (typeof ev.d === "string") { typed += ev.d; showLive(typed.trimStart()); sp?.push(typed); }
             else if (ev.done) fin = ev;
           }
         }
@@ -186,7 +185,7 @@ export default function PipChat() {
 
     const msg: M = { me: false, text: reply, go, mood: mood_ };
     setMsgs((cur) => (started ? [...cur.slice(0, -1), msg] : [...cur, msg]));
-    speak(reply);
+    sp?.finish(reply);
     setLive(false); busyRef.current = false; setBusy(false);
   };
   askRef.current = ask;
@@ -213,7 +212,7 @@ export default function PipChat() {
     if (id === "storybook" || id === "toys" || id === "growth") location.hash = id;
     setOpen(false);
   };
-  const toggleVoice = () => { setVoice((v) => { if (v) { try { speechSynthesis.cancel(); } catch {} } return !v; }); };
+  const toggleVoice = () => { setVoice((v) => { if (v) stopSpeaking(); return !v; }); };
 
   return (
     <div className="chat">

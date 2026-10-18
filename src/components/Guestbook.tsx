@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import { say } from "@/lib/pipSay";
+import { unlock } from "@/lib/progress";
 import Reactions from "./Reactions";
 import type { GbEntry } from "@/lib/guestbookTypes";
 
@@ -39,6 +40,7 @@ export default function Guestbook() {
         window.dispatchEvent(new CustomEvent("pip:wish", { detail: data.entry })); // a new star floats up in the 3D wish wall
       }
       form.reset();
+      unlock("guestbook");
       say(data.pending ? "A note! I’ll pin it up soon." : "A new note! Pinned it up.");
       setStatus("ok");
       setMsg(data.pending ? "Thank you! Pip will read your note and pin it up soon." : "Thank you! Pip tucked your note into the guestbook.");

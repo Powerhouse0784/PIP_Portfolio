@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { unlock } from "@/lib/progress";
 import { useAudio } from "@/components/Providers";
 import PipHero from "@/components/PipHero";
 import DrawPad from "@/components/DrawPad";
@@ -171,15 +172,16 @@ export default function PipDreamCorner() {
     try {
       setPhoto(await makePhoto(outfit, new Date().toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })));
       say("Your Pip picture is ready to save. Sweet keepsake!", "proud");
+      unlock("photo");
     } catch { setErr("The camera fogged up. Try again?"); }
     setPhotoBusy(false);
   };
-  const savePhoto = () => { if (!photo) return; const a = document.createElement("a"); a.href = photo; a.download = "pip-dream-corner.png"; document.body.appendChild(a); a.click(); a.remove(); };
+  const savePhoto = () => { if (!photo) return; const a = document.createElement("a"); a.href = photo; a.download = "pip-dream-corner.png"; document.body.appendChild(a); a.click(); a.remove(); unlock("share"); };
   const sharePhoto = async () => {
     if (!photo) return;
     try {
       const file = new File([await (await fetch(photo)).blob()], "pip-dream-corner.png", { type: "image/png" });
-      if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], title: "Pip’s Dream Corner" }); else savePhoto();
+      if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: "Pip’s Dream Corner" }); unlock("share"); } else savePhoto();
     } catch { /* share sheet closed */ }
   };
 
@@ -196,6 +198,7 @@ export default function PipDreamCorner() {
 
   const run = (id: Id, topic?: string, loud = false) => {
     hush(); setErr(""); setActive(id);
+    unlock("corner");
     if (id !== "sleep") setSleepy(false);
     switch (id) {
       case "dance":

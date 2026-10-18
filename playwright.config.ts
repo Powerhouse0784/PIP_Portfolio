@@ -11,7 +11,7 @@ export default defineConfig({
   fullyParallel: true,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
-  use: { baseURL: BASE, trace: "retain-on-failure" },
+  use: { baseURL: BASE, trace: "retain-on-failure", serviceWorkers: "block" }, // v20.spec.ts opts back in for the offline test
   webServer: process.env.BASE_URL
     ? undefined
     : { command: `npm run build && npx next start -p ${PORT}`, url: BASE, reuseExistingServer: !process.env.CI, timeout: 240_000 },

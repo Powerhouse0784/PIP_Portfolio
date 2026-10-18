@@ -1,10 +1,12 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { useAudio } from "./Providers";
 import { say } from "@/lib/pipSay";
+import { STICKERS, unlock } from "@/lib/progress";
+import { useProgress } from "@/lib/useProgress";
 
 const LINKS: [string, string][] = [
-  ["about", "About"], ["projects", "Projects"], ["story", "My Story"], ["guestbook", "Guestbook"],
+  ["about", "About"], ["tour", "Try it all"], ["projects", "Projects"], ["story", "My Story"], ["guestbook", "Guestbook"],
 ];
 const MORE: [string, string][] = [
   ["storybook", "Bedtime storybook"], ["toys", "Rattle & block toys"], ["growth", "Growth chart"], ["catcher", "Catch the dreams"], ["daily", "Tonight’s dream card"], ["dreammaker", "Make a dream"],
@@ -17,22 +19,34 @@ export default function SiteHeader() {
   const [active, setActive] = useState("");
   const menuBtn = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
+  const prog = useProgress();
+  const got = Object.keys(prog.stickers).filter((id) => STICKERS.some((s) => s.id === id)).length;
 
   useEffect(() => {
     const t = document.documentElement.dataset.theme;
     setNight(t ? t === "night" : matchMedia("(prefers-color-scheme:dark)").matches);
   }, []);
 
-  // Scroll-spy: highlight the nav link for the section being read.
+  // Scroll-spy: highlight the nav link for the section being read. Lazy sections swap their placeholder for the real section when
+  // they mount, so the elements are looked up on every scroll instead of observing nodes that may disappear.
   useEffect(() => {
     const ids = [...LINKS, ...MORE].map(([id]) => id);
-    const els = ids.map((id) => document.getElementById(id)).filter((e): e is HTMLElement => !!e);
-    if (!els.length || !("IntersectionObserver" in window)) return;
-    const io = new IntersectionObserver((es) => {
-      es.forEach((e) => { if (e.isIntersecting) setActive(e.target.id); });
-    }, { rootMargin: "-40% 0px -55% 0px" });
-    els.forEach((e) => io.observe(e));
-    return () => io.disconnect();
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const line = innerHeight * 0.4;
+      let cur = "";
+      for (const id of ids) { // later ids are the more specific, nested ones, so the last match wins
+        const r = document.getElementById(id)?.getBoundingClientRect();
+        if (r && r.top <= line && r.bottom > line) cur = id;
+      }
+      setActive((x) => (x === cur ? x : cur));
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+    update();
+    addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("resize", onScroll);
+    return () => { removeEventListener("scroll", onScroll); removeEventListener("resize", onScroll); cancelAnimationFrame(raf); };
   }, []);
 
   // Mobile menu: close on Escape, outside click, resize to desktop; return focus to the button.
@@ -49,11 +63,26 @@ export default function SiteHeader() {
     return () => { removeEventListener("keydown", key); removeEventListener("mousedown", click); removeEventListener("resize", resize); };
   }, [open]);
 
-  const toggleTheme = () => {
+  const toggleTheme = (e: ReactMouseEvent<HTMLButtonElement>) => {
     const next = !night;
+    const apply = () => {
+      document.documentElement.dataset.theme = next ? "night" : "day";
+      try { localStorage.setItem("pip-theme", next ? "night" : "day"); } catch {}
+    };
+    // Modern browsers: the new theme spreads outward from the button like a moonrise (View Transitions API).
+    const vt = (document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } }).startViewTransition;
+    if (vt && !matchMedia("(prefers-reduced-motion:reduce)").matches) {
+      const r = e.currentTarget.getBoundingClientRect();
+      const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const end = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+      try {
+        vt.call(document, apply).ready
+          .then(() => { document.documentElement.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${end}px at ${x}px ${y}px)`] }, { duration: 700, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }); })
+          .catch(() => {});
+      } catch { apply(); }
+    } else apply();
     setNight(next);
-    document.documentElement.dataset.theme = next ? "night" : "day";
-    try { localStorage.setItem("pip-theme", next ? "night" : "day"); } catch {}
+    if (next) unlock("night");
     play("chime");
     say(next ? "Goodnight! Stars out, lanterns on." : "Good morning! *yawn* Is it breakfast yet?");
   };
@@ -72,6 +101,9 @@ export default function SiteHeader() {
             <a key={id} className="l" href={`#${id}`} aria-current={active === id ? "true" : undefined}>{label}</a>
           ))}
           <button className="ib kbd" aria-label="Jump to a place on the site. Shortcut: press the slash key" onClick={() => window.dispatchEvent(new Event("pip:palette"))}>✦ Jump</button>
+          <button className="ib stk" aria-label={`Open sticker book. ${got} of ${STICKERS.length} collected`} onClick={() => window.dispatchEvent(new Event("pip:stickers"))}>
+            <span aria-hidden="true">★</span><small aria-hidden="true">{got}</small>
+          </button>
           <button className="ib" data-act="sound" aria-pressed={on} aria-label={on ? "Sound on. Mute" : "Sound off. Turn sound on"} onClick={toggleSound}>
             {on ? "♫" : "♪"}
           </button>
@@ -94,6 +126,7 @@ export default function SiteHeader() {
               {[...LINKS.slice(0, 2), ...MORE, ...LINKS.slice(2)].map(([id, label]) => (
                 <li key={id}><a href={`#${id}`} aria-current={active === id ? "true" : undefined} onClick={() => setOpen(false)}>{label}</a></li>
               ))}
+              <li><button onClick={() => { setOpen(false); window.dispatchEvent(new Event("pip:stickers")); }}>Sticker book ({got}/{STICKERS.length})</button></li>
               <li><button onClick={() => { setOpen(false); window.dispatchEvent(new Event("pip:palette")); }}>Jump somewhere…</button></li>
             </ul>
           </div>

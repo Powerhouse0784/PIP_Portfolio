@@ -34,7 +34,7 @@ In the **Dream Corner** (the night-sky scene with Pip in the middle) tap the mic
 - **Moves:** dance, spin, jump, wave, sleep, sing, clap, hide, laugh, bow, fly, love, wink, surprise. Pip starts moving instantly from a free local word match (`lib/pipAct.ts`), so it works with no API key and offline.
 - **Brain:** `/api/chat` (Gemini, then Grok, then Groq) writes his answer and picks his mood (6 expressions) and, if you asked for a move, an `{act:...}` tag that is checked against the whitelist.
 - **Ears:** the browser's Web Speech API (Chrome, Edge, Safari; free). In Chrome the audio is processed by Google. Firefox has no speech input, so the text box and chips are the fallback.
-- **Voice:** `/api/voice` uses Gemini text-to-speech (free tier, voice set by `GEMINI_VOICE`, model by `GEMINI_TTS_MODEL`, tone follows his mood). If it is missing, rate-limited or fails, the browser's own speech voice is used. Pip's head bobs while he talks.
+- **Voice:** the browser's own voice is the default (instant). `/api/voice` can use Gemini text-to-speech when `NEXT_PUBLIC_PIP_CLOUD_VOICE=1` (free tier, voice set by `GEMINI_VOICE`, model by `GEMINI_TTS_MODEL`, tone follows his mood). If it is missing, rate-limited or fails, the browser's own speech voice is used. Pip's head bobs while he talks.
 - `next.config.mjs` now allows the microphone for this site only (`microphone=(self)`); the old header blocked it.
 
 ## Tests
@@ -75,6 +75,41 @@ Sound is off until the visitor opts in (top-bar ♪ or pressing Play in the Lull
 - **Atmosphere**: drifting clouds, orbiting stars, theme-aware colour washes and scalloped cloud edges on the Projects and Guestbook bands.
 - **Stats strip + odometer**: "Dreams delivered" grows with every receipt you collect (stored in this browser only); the footer odometer shows the real shared visit count.
 - **Star-wand cursor** for mouse users only (CSS, no JS).
+
+## v20: come back tomorrow (replay, install, polish)
+- **Sticker book** (`★` in the header, `My sticker book` in the Jump menu, or `/?stickers=1`): 30 stickers to find, each with a hint while locked. A toast announces every new one (chime only if sound is on, a buzz on phones). Receipts from the toys unlock most project stickers (`components/Stickers.tsx` reads them), the rest are one-line `unlock("id")` calls. Finish them all for a golden Pip. Stored in this browser only (`lib/progress.ts`, key `pip-progress-v1`); "Start over" asks twice.
+- **Night streak**: visiting on consecutive days grows the streak (3 and 7 nights are stickers); Pip welcomes you back ("Night 4 in a row!"), or says he missed you if the streak broke.
+- **The shy star moves every day**: the hidden five-poke star picks one of five safe spots from the date, so there is a reason to hunt for it again.
+- **Bedtime reminder** (in the Tonight's dream section): pick a time and download a repeating daily calendar event (`.ics`, built in the browser, nothing uploaded, `lib/ics.ts`).
+- **Installable + offline**: real PNG icons (192, 512, maskable, Apple touch), manifest with shortcuts (Tonight's dream, Dream Corner, Sticker book), and a service worker (`public/sw.js`, production only): pages network-first with an offline fallback, build files/images/icons cache-first, API, admin and audio never cached. "Install Pip as an app" is in the Jump menu. Pip mentions it when the connection drops or returns.
+- **Lock-screen controls**: while sound is on, the phone's media controls show Pip's artwork and can pause the ambience (Media Session API).
+- **Moonrise theme switch**: the day/night change spreads outward from the button using the View Transitions API; browsers without it, and reduced-motion users, switch instantly.
+- **Haptics**: a small buzz on phones for stickers, the secret star and pokes (never with reduced motion).
+- **Fix**: the header's scroll-spy lost track of lazily loaded sections (Guestbook, Daily dream, Dream Maker, ...) once they mounted. It now measures sections on scroll.
+
+Tests for all of this: `tests/v20.spec.ts`. Playwright blocks service workers by default (so older specs stay predictable); the offline test opts back in and needs a production build (`npm test` does that; `next dev` does not register the worker).
+
+## v25: footer cleanup
+- Removed the under-construction banner, the wall of eight 88x31 badges and the haX.baby webring (and its "Webring Surfer" sticker, so the sticker book is now 30). The footer has no external links. Tests: `tests/v21.spec.ts` ("footer").
+
+## v23: three fixes
+- **Pip's Dream Mobile art was too small.** Pip's arch window is now a third bigger (3.2 x 4.8 units, was 2.4 x 3.6) and the camera fits the scene by *height* as well as width, so he fills about 75% of the frame instead of about 60%. On phones the stage is now portrait (4:5, was square), matching the tall arch. The star ring and moon were moved outward so nothing overlaps him.
+- **Pip's voice is instant.** The Gemini voice needed a network round trip plus generation before the first sound (several seconds), so the browser's own voice is now the default and starts in milliseconds. In the chat, `createSpeaker()` (`lib/pipVoice.ts`) speaks each sentence **while the reply is still streaming in**, at the same moment the words appear; `*actions*` and `{tags}` are never read aloud. Set `NEXT_PUBLIC_PIP_CLOUD_VOICE=1` to bring the Gemini voice back (opt-in).
+- **"Voice input hiccuped" now says what happened.** Network/speech-service problems, a missing microphone and blocked permission each get their own message; stopping the mic yourself is silent; an unsupported browser language quietly retries in US English; Pip stops talking before listening so he does not hear himself.
+- Tests: `tests/voice.spec.ts` (fake speech engine, runs in Node).
+- **Dream Maker's left form looked bloated.** The form sat beside the tall dream card and `align-items:stretch` made its grid rows stretch to fill the height (giant input, tall oval chips, blob button). `.gform` now packs rows at the top (`align-content:start`). Regression test: `tests/layout.spec.ts`.
+
+## v22: all three tiers, made visible
+- **Everything Pip can do** (`#tour`, directly under the hero; also the hero's second button, the header's "Try it all" link and the Jump menu): fifteen cards grouped as Tier 1 *Baseline*, Tier 2 *Hard* and Tier 3 *Boss*. Each card says what the feature is and has a **Try it** button that jumps straight to it (or flips the theme, opens the chat, opens the sticker book). A ✓ appears once you've done it (from the sticker book, or from pressing the button) and a progress bar counts them. Component: `components/FeatureTour.tsx`.
+- **Pip in real 3D** (`#pip3d`, `components/Pip3D.tsx`): the Tier 3 "rotate and interact with the character in 3D" item. Pip is built from Three.js primitives (no model file to download): smooth round skull, soft eye sockets with amber pinpricks, a tiny crooked smile, blush, and a floppy star-dotted nightcap (one continuous bent cone, so it never splits when he spins) with a pom-pom and a pink bow, sitting on a cloud with six orbiting stars. Drag to rotate (touch drags horizontally and still scrolls vertically); his eyes and head follow your pointer anywhere on the page, or wander when nobody is pointing; tap the head, body, bow, pom-pom or a star for different reactions; buttons for Turn, Giggle, Wave, Spin, Sleepy mode and Hold still; arrow keys turn him and Enter makes him giggle. Theme-aware, pauses off-screen and in hidden tabs, respects reduced motion, falls back to the flat art without WebGL. The official artwork is still used everywhere else; this is a stylized 3D companion. New sticker: *Third Dimension*.
+- Tests: `tests/v22.spec.ts`.
+
+## v21: the early-web corner (Early-Web Soul)
+- **Pip's Desktop** (`#desktop`, Jump menu "Pip's Desktop"): a Windows-95-style window on a little desktop with a taskbar, Start menu (real section links) and a live clock. Drag the title bar, or focus it and use the arrow keys (Shift = bigger steps, Home = reset); minimise to the taskbar, close it and reopen it from the desktop icon. Dragging is switched off on phones so the page still scrolls. Three files: `readme.txt` (with a hint about the goodnight secret), `top8.exe` (Pip's Top 8 Sleepy Friends, each with a one-line note) and `defrag.exe` (a block-grid defragmenter that finishes with "0 bad dreams found", the sparkle sound and a sticker; reduced motion finishes instantly). Lazy-loaded (`components/RetroDesktop.tsx`).
+- **Secret #2, "goodnight"** (`components/Goodnight.tsx`): type *goodnight* anywhere outside a text box and the nursery tucks itself in: lights dim, Pip falls asleep, the sleepy music-box motif plays if sound is on, a sticker is earned. Tap, any press of Esc, or the **Wake Pip up** button wakes him (he also wakes alone after 25 s). Keyboard-less visitors: Jump menu, "Secret: say goodnight to Pip". It never fires while typing in the chat, guestbook or Jump box.
+- **Footer** (cleaned up in v25): brand, a line of sign-off, three tiny retro pill badges, the Chaos and Replay-intro buttons, the visit odometer and the credits. The earlier construction banner, 88x31 badge wall and webring were removed, so nothing in the footer sends visitors off-site.
+- **Two new stickers**: Defragmenter and Sweet Dreamer.
+- Tests: `tests/v21.spec.ts`.
 
 ## Structure
 - `src/app/page.tsx`: page content. `globals.css`: design tokens (day/night) and styles.

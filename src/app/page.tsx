@@ -1,4 +1,4 @@
-import { LazyCatcher, LazyDarkRoom, LazyDreamMaker, LazyDreamMobile, LazyDailyDream, LazyStorybook, LazyToys, LazyGrowthChart, LazyGuestbook } from "@/components/Lazy";
+import { LazyCatcher, LazyDarkRoom, LazyDreamMaker, LazyDreamMobile, LazyPip3D, LazyDailyDream, LazyRetroDesktop, LazyStorybook, LazyToys, LazyGrowthChart, LazyGuestbook } from "@/components/Lazy";
 import LullabyLab from "@/components/LullabyLab";
 import Lanterns from "@/components/Lanterns";
 import DeliveryRoute from "@/components/DeliveryRoute";
@@ -11,6 +11,8 @@ import StatsStrip from "@/components/StatsStrip";
 import PipHero from "@/components/PipHero";
 import PipDreamCorner from "@/components/PipDreamCorner";
 import VisitorCounter from "@/components/VisitorCounter";
+import FeatureTour from "@/components/FeatureTour";
+import Goodnight from "@/components/Goodnight";
 import { ReplayIntro } from "@/components/Intro";
 
 const FACTS: [string, string][] = [
@@ -33,7 +35,7 @@ export default function Home() {
             <p className="label">Midnight Nursery · Dream Department</p>
             <h1>I build the <span className="grad">dreams</span> you fall asleep inside.</h1>
             <p className="lede">Hello, sleepyhead! I’m Pip, a tiny dream engineer with big ideas and a very important bedtime job.</p>
-            <a className="btn" href="#projects">Explore my little world →</a>
+            <div className="cta-row"><a className="btn" href="#projects">Explore my little world →</a><a className="chip" href="#tour">See everything Pip can do</a></div>
             <StatsStrip />
             <div className="hero-notes"><Greeting /><TonightSky /></div>
           </div>
@@ -49,6 +51,8 @@ export default function Home() {
       </div>
         <a className="scroll-cue" href="#about" aria-label="Scroll down to meet Pip"><span>scroll</span><span aria-hidden="true">↓</span></a>
       </div>
+
+      <FeatureTour />
 
       <PipDreamCorner />
 
@@ -130,13 +134,16 @@ export default function Home() {
         </div>
       </section>
 
+      <LazyPip3D />
       <LazyDreamMobile />
       <LazyCatcher />
       <LazyDarkRoom />
       <LazyDailyDream />
       <LazyDreamMaker />
       <Story />
+      <LazyRetroDesktop />
       <LazyGuestbook />
+      <Goodnight />
 
       <footer>
         <div className="wrap">
@@ -155,7 +162,7 @@ export default function Home() {
               <li>Sound: the Pip’s Dream Workshop audio pack (original synthesized ambience, music-box lullaby and sound effects), plus a few chimes synthesized live with the Web Audio API.</li>
               <li>Weather (only if a visitor asks): Open-Meteo.com, free and key-less, licensed CC BY 4.0.</li>
               <li>3D scene: three.js (MIT). Database: Supabase. Rate limiting: Upstash Redis. Hosting: Vercel.</li>
-              <li>Pip’s chat and dream-writing: Google Gemini or Groq models, prompted to stay gentle and in character, with a hand-written fallback.</li>
+              <li>Pip’s chat, stories and dream-writing: Google Gemini, xAI Grok or Groq models (tried in that order), prompted to stay gentle and in character, with a hand-written fallback. Pip’s speaking voice: the browser’s own voice, which starts instantly and speaks each sentence as it is written (Gemini text-to-speech is available as an opt-in).</li>
               <li>Built with Next.js, React and TypeScript, with help from AI coding tools.</li>
             </ul>
           </details>

@@ -14,6 +14,9 @@ import SoundPrompt from "@/components/SoundPrompt";
 import ScrollFX from "@/components/ScrollFX";
 import ScrollRail from "@/components/ScrollRail";
 import WeatherFX from "@/components/WeatherFX";
+import Stickers from "@/components/Stickers";
+import PwaClient from "@/components/PwaClient";
+import MediaSession from "@/components/MediaSession";
 
 const serif = Fraunces({ subsets: ["latin"], axes: ["opsz"], display: "swap", variable: "--font-serif" });
 const ui = Fredoka({ subsets: ["latin"], display: "swap", variable: "--font-ui" });
@@ -30,6 +33,8 @@ export const metadata: Metadata = {
   title: { default: "Pip’s Dream Workshop", template: "%s · Pip’s Dream Workshop" },
   description: DESC,
   applicationName: "Pip’s Dream Workshop",
+  icons: { icon: "/icon.svg", apple: "/icons/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "Pip", statusBarStyle: "default" },
   openGraph: { title: "Pip’s Dream Workshop", description: DESC, type: "website", images: [{ url: "/images/og.png", width: 1200, height: 630, alt: "Pip’s Dream Workshop: Pip, a gentle skull baby in a star nightcap, on a cloud" }] },
   twitter: { card: "summary_large_image", title: "Pip’s Dream Workshop", description: DESC, images: ["/images/og.png"] },
 };
@@ -70,6 +75,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <PipReactions />
           <Intro />
           <SoundPrompt />
+          <Stickers />
+          <MediaSession />
+          <PwaClient />
         </AudioProvider>
       </body>
     </html>

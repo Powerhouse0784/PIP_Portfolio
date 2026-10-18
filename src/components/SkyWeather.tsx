@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { unlock } from "@/lib/progress";
 import { fetchSky, findPlace, type Place, type Sky } from "@/lib/weather";
 import { say } from "@/lib/pipSay";
 
@@ -26,6 +27,7 @@ export default function SkyWeather() {
     try {
       const s = await fetchSky(p);
       setSky(s); setOpen(false); announce(s.kind);
+      unlock("weather");
       try { localStorage.setItem(KEY, JSON.stringify(p)); } catch {}
       if (speak) say(`${s.label} in ${s.place.split(",")[0]}, ${s.temp}°. ${s.line}`);
     } catch { setErr("Pip couldn’t reach the weather clouds. Try again in a moment."); }

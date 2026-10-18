@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useAudio } from "./Providers";
 import { pick, say } from "@/lib/pipSay";
+import { unlock } from "@/lib/progress";
+import { buzz } from "@/lib/haptics";
 import { FEELS, isFeel, type Feel } from "@/lib/feel";
 import { ACT_FX, ACT_MS, isAct, type Act } from "@/lib/pipAct";
 
@@ -140,9 +142,12 @@ export default function PipHero({ src, alt, id = "hero", sleep, onWake, children
     void el.offsetWidth;
     el.classList.add("giggle");
     blip(784);
+    buzz(10);
+    unlock("giggle");
     if (asleep && sleep !== undefined) {
       onWake?.();
     } else if (asleep) {
+      unlock("wake");
       setAwake(true);
       say("*yawn* I’m up! I’m up!");
       clearTimeout(nap.current);

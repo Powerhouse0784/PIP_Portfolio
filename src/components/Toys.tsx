@@ -4,6 +4,7 @@ import { useAudio } from "./Providers";
 import Receipt from "./Receipt";
 import ShareButton from "./ShareButton";
 import { say } from "@/lib/pipSay";
+import { unlock } from "@/lib/progress";
 import { nextReceipt, type R } from "@/lib/receipt";
 
 /* ---------- Block tower ---------- */
@@ -157,6 +158,7 @@ function Rattle() {
       if (n % 12 === 0) {
         setStars((k) => k + 1);
         say("A rattle star! Shiny.");
+        unlock("rattle");
         setRec(nextReceipt(`Delivered: one rattle star, after ${n} shakes.`));
       }
       return n;

@@ -3,12 +3,19 @@ import { useEffect, useRef, useState } from "react";
 import { Star } from "./Icons";
 import { say } from "@/lib/pipSay";
 import { useAudio } from "./Providers";
+import { unlock, dayKey } from "@/lib/progress";
+import { buzz } from "@/lib/haptics";
 
-const IDLE = "psst… the smallest star is shy. Poke it five times.";
+const IDLE = "psst… the smallest star is shy and hides somewhere new every day. Poke it five times.";
+/** Spots inside the hero art that are never covered by the moon or the buttons. */
+const SPOTS = [{ left: "2%", top: "46%" }, { left: "5%", top: "18%" }, { left: "88%", top: "72%" }, { left: "7%", top: "86%" }, { left: "50%", top: "94%" }];
+const spotFor = (key: string) => { let h = 0; for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0; return SPOTS[h % SPOTS.length]; };
 
 export default function EasterEgg() {
   const { play } = useAudio();
   const [count, setCount] = useState(0);
+  const [spot, setSpot] = useState(SPOTS[0]);
+  useEffect(() => { setSpot(spotFor(dayKey())); }, []);
   const dlg = useRef<HTMLDialogElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
 
@@ -37,7 +44,7 @@ export default function EasterEgg() {
   };
 
   useEffect(() => {
-    const h = () => { confetti(); chime(); dlg.current?.showModal(); };
+    const h = () => { unlock("egg"); buzz([20, 40, 20]); confetti(); chime(); dlg.current?.showModal(); };
     addEventListener("pip:egg", h);
     return () => removeEventListener("pip:egg", h);
   });
@@ -46,6 +53,8 @@ export default function EasterEgg() {
     const n = count + 1;
     if (n < 5) { say(["Hehe!", "That tickles!", "Almost… shh.", "One more poke!"][n - 1]); return setCount(n); }
     setCount(0);
+    unlock("egg");
+    buzz([20, 40, 20]);
     confetti();
     chime();
     dlg.current?.showModal();
@@ -53,7 +62,7 @@ export default function EasterEgg() {
 
   return (
     <>
-      <button className="tiny" style={{ left: "2%", top: "46%" }} onClick={poke} aria-label="Tiny hidden star. Press five times for a surprise">
+      <button className="tiny" style={{ left: spot.left, top: spot.top }} onClick={poke} aria-label="Tiny hidden star. Press five times for a surprise">
         <Star size={12} />
       </button>
       <p className="hint" aria-live="polite">{count ? `Giggle… ${count} of 5` : IDLE}</p>

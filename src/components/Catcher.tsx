@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { useAudio } from "./Providers";
+import { unlock } from "@/lib/progress";
 
 type S = { x: number; y: number; v: number; r: number; heart: boolean };
 const W = 720, H = 380, ROUND = 30;
@@ -46,6 +47,7 @@ export default function Catcher() {
       if (t < end) raf = requestAnimationFrame(tick);
       else {
         setRun(false);
+        if (score.current >= 10) unlock("catcher");
         setBest((b) => { const n = Math.max(b, score.current); try { localStorage.setItem("pip-best", String(n)); } catch {} return n; });
       }
     };

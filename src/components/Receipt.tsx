@@ -5,7 +5,8 @@ import type { R } from "@/lib/receipt";
 /** The "dream delivery receipt" that appears after a project interaction. Each new receipt counts as a delivery. */
 export default function Receipt({ r }: { r: R | null }) {
   const n = r?.n;
-  useEffect(() => { if (n) window.dispatchEvent(new Event("pip:delivered")); }, [n]);
+  const text = r?.text;
+  useEffect(() => { if (n) window.dispatchEvent(new CustomEvent("pip:delivered", { detail: text })); }, [n]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!r) return null;
   return (
     <div className="receipt" key={r.n}>

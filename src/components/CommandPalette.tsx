@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { unlock } from "@/lib/progress";
 
 type Cmd = { id: string; label: string; hint: string; keys: string; run: () => void };
 const reduced = () => matchMedia("(prefers-reduced-motion:reduce)").matches;
@@ -7,6 +8,7 @@ const go = (id: string) => () => document.getElementById(id)?.scrollIntoView({ b
 const press = (act: string) => () => document.querySelector<HTMLElement>(`[data-act="${act}"]`)?.click();
 
 const CMDS: Cmd[] = [
+  { id: "tour", label: "Everything Pip can do", hint: "Go to", keys: "tour features all everything try list tiers", run: go("tour") },
   { id: "about", label: "Meet Pip", hint: "Go to", keys: "about intro facts", run: go("about") },
   { id: "projects", label: "Things Pip dreamed up", hint: "Go to", keys: "projects lullaby lantern route", run: go("projects") },
   { id: "storybook", label: "Bedtime storybook", hint: "Go to", keys: "story book pages bedtime read", run: go("storybook") },
@@ -17,11 +19,17 @@ const CMDS: Cmd[] = [
   { id: "story", label: "How Pip became a dream engineer", hint: "Go to", keys: "story origin scenes", run: go("story") },
   { id: "guestbook", label: "Sign the guestbook", hint: "Go to", keys: "guestbook note message", run: go("guestbook") },
   { id: "game", label: "Catch the falling dreams", hint: "Play", keys: "game catch play toy", run: go("catcher") },
+  { id: "pip3d", label: "Meet Pip in 3D", hint: "Play", keys: "3d three webgl pip model rotate character", run: go("pip3d") },
   { id: "mobile3d", label: "Pip’s 3D dream mobile", hint: "Play", keys: "3d three webgl stars mobile chime", run: go("mobile3d") },
   { id: "dark", label: "The Dark Room (nightlight)", hint: "Go to", keys: "flashlight dark room nightlight", run: go("darkroom") },
   { id: "chaos", label: "Toggle chaos mode", hint: "Action", keys: "chaos wild fun", run: press("chaos") },
   { id: "theme", label: "Toggle day / night", hint: "Action", keys: "theme dark light mode", run: press("theme") },
   { id: "sound", label: "Toggle sound", hint: "Action", keys: "sound mute audio music", run: press("sound") },
+  { id: "stickers", label: "My sticker book", hint: "Open", keys: "stickers book collection achievements streak progress", run: () => window.dispatchEvent(new Event("pip:stickers")) },
+  { id: "bedtime", label: "Add Pip’s bedtime to my calendar", hint: "Go to", keys: "bedtime reminder calendar ics habit", run: go("daily") },
+  { id: "install", label: "Install Pip as an app", hint: "Action", keys: "install app pwa home screen offline", run: () => window.dispatchEvent(new Event("pip:install")) },
+  { id: "desktop", label: "Pip’s Desktop (retro window)", hint: "Play", keys: "desktop retro window defrag top8 90s old web", run: go("desktop") },
+  { id: "goodnight", label: "Secret: say goodnight to Pip", hint: "Easter egg", keys: "goodnight sleep bedtime secret egg", run: () => window.dispatchEvent(new Event("pip:goodnight")) },
   { id: "secret", label: "Secret: summon the constellation", hint: "Easter egg", keys: "secret star egg constellation wish", run: () => window.dispatchEvent(new Event("pip:egg")) },
 ];
 
@@ -57,7 +65,7 @@ export default function CommandPalette() {
     return () => clearTimeout(t);
   }, [open]);
 
-  const run = (c?: Cmd) => { if (!c) return; setOpen(false); setTimeout(c.run, 60); };
+  const run = (c?: Cmd) => { if (!c) return; unlock("jump"); setOpen(false); setTimeout(c.run, 60); };
   if (!open) return null;
 
   return (

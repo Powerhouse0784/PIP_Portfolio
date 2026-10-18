@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { unlock } from "@/lib/progress";
 
 const SECRETS = [
   ["☾", "Pip’s very first nightcap was a sock."],
@@ -13,6 +14,7 @@ export default function DarkRoom() {
   const el = useRef<HTMLDivElement>(null);
   const [lit, setLit] = useState(false);
   const aim = (cx: number, cy: number) => {
+    unlock("darkroom");
     const n = el.current;
     if (!n) return;
     const r = n.getBoundingClientRect();

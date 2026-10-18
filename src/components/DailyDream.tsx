@@ -6,6 +6,8 @@ import { recipe, type Dream } from "@/lib/dreamRecipes";
 import { shareDreamCard } from "@/lib/shareCard";
 import { say } from "@/lib/pipSay";
 import DreamArt from "./DreamArt";
+import Bedtime from "./Bedtime";
+import { unlock } from "@/lib/progress";
 
 type Saved = Dream & { day: string; moon: string; name: string };
 const CARD = "pip-daily", NAMES = "pip-name", LOG = "pip-daily-log";
@@ -58,6 +60,7 @@ export default function DailyDream() {
     setNights(log.length); setCard(saved);
     window.dispatchEvent(new Event("pip:delivered"));
     say("Your dream for tonight is ready!");
+    unlock("daily");
     lock.current = false; setBusy(false);
   };
 
@@ -72,6 +75,7 @@ export default function DailyDream() {
         art: { seed: `${card.title}|${card.text}`, feeling: feelingForMoon(card.moon), text: card.text },
         filename: `pip-dream-${card.day}.png`, shareText: `${card.title}: my dream card from Pip’s Dream Workshop ✦`,
       });
+      if (r === "downloaded" || r === "shared") unlock("share");
       if (r === "downloaded") { setNote("Saved as a picture. Sweet dreams!"); say("A keepsake! I’m blushing."); }
       else if (r === "shared") setNote("Shared. Pip is delighted.");
     } catch { setNote("Pip couldn’t draw the card this time. Try again?"); }
@@ -112,6 +116,7 @@ export default function DailyDream() {
             {note && <p className="small" role="status">{note}</p>}
           </div>
         </div>
+        <Bedtime />
       </div>
     </section>
   );

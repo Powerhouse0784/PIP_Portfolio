@@ -5,13 +5,14 @@ import { useAudio } from "./Providers";
 import Receipt from "./Receipt";
 import { nextReceipt, type R } from "@/lib/receipt";
 import { pick, say } from "@/lib/pipSay";
+import { unlock } from "@/lib/progress";
 import Reactions from "./Reactions";
 import type { GbEntry } from "@/lib/guestbookTypes";
 import type { NoteDetail, TintFinal } from "@/lib/tint";
 
 const NOTES = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98]; // C major pentatonic, two octaves
 const NOTE_NAMES = ["C", "D", "E", "G", "A", "C", "D", "E", "G"];
-const ARCH_W = 2.4, ARCH_H = 3.6;
+const ARCH_W = 3.2, ARCH_H = 4.8; // Pip's window: big, so he is the star of the scene (stars orbit outside it)
 
 const isNight = () => {
   const t = document.documentElement.dataset.theme;
@@ -165,7 +166,7 @@ export default function DreamMobile() {
     const moonMesh = new THREE.Mesh(moonGeo, goldMat); moon.add(moonMesh);
     const thread = new THREE.Mesh(track(new THREE.CylinderGeometry(0.012, 0.012, 1.4, 6)), track(new THREE.MeshBasicMaterial({ color: 0xd9b98f })));
     thread.position.y = 1.0; moon.add(thread);
-    moon.position.set(-2.1, 1.35, 0.9); world.add(moon);
+    moon.position.set(-2.7, 1.9, 0.9); world.add(moon);
 
     // orbiting, clickable stars
     const starGeo = track(new THREE.ExtrudeGeometry(starShape(0.34, 0.15), { depth: 0.1, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 2 }));
@@ -176,7 +177,7 @@ export default function DreamMobile() {
       const hue = track(new THREE.MeshStandardMaterial({ color: col, roughness: 0.35, metalness: 0.1, emissive: col, emissiveIntensity: 0.3 }));
       const m = new THREE.Mesh(starGeo, hue);
       m.userData.i = i; world.add(m);
-      return { m, hue, r: 2.15 + (i % 4) * 0.42, a: (i / colors.length) * Math.PI * 2, v: (0.12 + (i % 3) * 0.05) * (i % 2 ? -1 : 1), y: -1.5 + ((i * 0.73) % 3.6), s: 0.8 + (i % 3) * 0.22, pop: 0, flash: 0 };
+      return { m, hue, r: 2.65 + (i % 4) * 0.42, a: (i / colors.length) * Math.PI * 2, v: (0.12 + (i % 3) * 0.05) * (i % 2 ? -1 : 1), y: -2.0 + ((i * 0.73) % 4.6), s: 0.8 + (i % 3) * 0.22, pop: 0, flash: 0 };
     });
 
     // wish wall: every approved guestbook note floats as a small pink-white star. Tap one to read it.
@@ -250,7 +251,9 @@ export default function DreamMobile() {
       renderer.setSize(W, H, false);
       const aspect = W / H;
       camera.aspect = aspect; k = Math.min(1, Math.max(0.62, aspect / 1.3));
-      dist = Math.max(7.4, (3.5 * k + 0.4) / (Math.tan((camera.fov * Math.PI) / 360) * aspect));
+      // Fit both ways: the stars' ring must fit the width, and the arch (plus the cloud under it) must fit the height.
+      const half = Math.tan((camera.fov * Math.PI) / 360);
+      dist = Math.max(8.2, (4.05 * k + 0.4) / (half * aspect), 3.25 / half);
       camera.updateProjectionMatrix(); need = 2;
     };
     const ro = new ResizeObserver(resize); ro.observe(host);
@@ -289,6 +292,7 @@ export default function DreamMobile() {
       const s = stars[j];
       s.pop = 1; need = 2;
       blipRef.current(NOTES[j]);
+      unlock("mobile3d");
       const wp = new THREE.Vector3(); s.m.getWorldPosition(wp); burst(wp, colors[j]);
       // Side effects (say, sounds) must not live inside a state updater: React runs those during render.
       const prev = rungRef.current;
