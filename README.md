@@ -27,6 +27,14 @@ Every request also gets a small server-side "creative spark" (random props, tone
 
 With a key, the chat bubble answers in Pip's voice (and can offer a "Take me to the toys" jump link) and the Dream Maker writes a fresh dream each time. Without keys, or if a provider is down or rate-limited, both quietly fall back to the hand-written rules and recipe book. Keys are server-only; `/api/chat` and `/api/dream` validate input with zod, cap lengths, rate-limit per visitor (Upstash if configured) and only allow a whitelist of section ids in jump links.
 
+## Talk to Pip (voice + commands)
+Under the hero there is a **Talk to Pip** panel. Tap the mic (or type, or tap a chip) and say things like "dance", "spin around", "wink", "sing me a lullaby", "go to sleep".
+- **Moves:** dance, spin, jump, wave, sleep, sing, clap, hide, laugh, bow, fly, love, wink, surprise. Pip starts moving instantly from a free local word match (`lib/pipAct.ts`), so it works with no API key and offline.
+- **Brain:** `/api/chat` (Gemini, then Grok, then Groq) writes his answer and picks his mood (6 expressions) and, if you asked for a move, an `{act:...}` tag that is checked against the whitelist.
+- **Ears:** the browser's Web Speech API (Chrome, Edge, Safari; free). In Chrome the audio is processed by Google. Firefox has no speech input, so the text box and chips are the fallback.
+- **Voice:** `/api/voice` uses Gemini text-to-speech (free tier, voice set by `GEMINI_VOICE`, model by `GEMINI_TTS_MODEL`, tone follows his mood). If it is missing, rate-limited or fails, the browser's own speech voice is used. Pip's head bobs while he talks.
+- `next.config.mjs` now allows the microphone for this site only (`microphone=(self)`); the old header blocked it.
+
 ## Tests
 ```bash
 npm install

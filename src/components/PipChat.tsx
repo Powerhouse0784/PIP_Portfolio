@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAudio } from "./Providers";
 import { FEELS, feel, inferFeel, isFeel, type Feel } from "@/lib/feel";
+import { isAct, parseCommand, perform, type Act } from "@/lib/pipAct";
 
 const RULES: [RegExp, string, Feel][] = [
   [/\b(hi|hello|hey|hiya)\b/i, "Hello, sleepyhead! *giggle*", "giggly"],
@@ -59,18 +60,20 @@ export default function PipChat() {
     const history = [...msgs, { me: true, text: t }];
     setMsgs(history);
 
-    let reply = "", go: string | null = null, m: Feel | null = null;
+    let reply = "", go: string | null = null, m: Feel | null = null, act: Act | null = null;
     try {
       const res = await fetch("/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: history.slice(-7).map((m) => ({ role: m.me ? "user" : "assistant", content: m.text.slice(0, 300) })) }),
       });
-      const j = (await res.json().catch(() => ({}))) as { reply?: string; go?: string | null; mood?: string; error?: string; unavailable?: boolean };
-      if (res.ok && j.reply) { reply = j.reply; go = j.go ?? null; m = isFeel(j.mood) ? j.mood : null; }
+      const j = (await res.json().catch(() => ({}))) as { reply?: string; go?: string | null; mood?: string; act?: string; error?: string; unavailable?: boolean };
+      if (res.ok && j.reply) { reply = j.reply; go = j.go ?? null; m = isFeel(j.mood) ? j.mood : null; act = isAct(j.act) ? j.act : null; }
       else if (res.status === 429 && j.error) reply = j.error;
     } catch { /* offline or API asleep: fall through to the rule book */ }
     if (!reply) { const r = RULES.find(([re]) => re.test(t)); reply = r?.[1] ?? ASK_AGAIN; m = r?.[2] ?? "curious"; }
     const mood_ = m ?? inferFeel(reply);
+    act ??= parseCommand(t);
+    if (act) perform(act);
 
     // Pip's face follows the conversation: the hero art reacts, and the chat shows how he feels.
     feel(mood_); setMood(mood_);

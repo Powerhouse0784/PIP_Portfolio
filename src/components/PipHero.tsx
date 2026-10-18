@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useAudio } from "./Providers";
 import { pick, say } from "@/lib/pipSay";
 import { FEELS, isFeel, type Feel } from "@/lib/feel";
+import { ACT_FX, ACT_MS, isAct, type Act } from "@/lib/pipAct";
 
 /** Glint centres in the 620x931 hero art, as % of its width/height. The art itself has no eye lights. */
 const EYES = [{ x: 41.9, y: 43.4 }, { x: 64.4, y: 39.1 }];
@@ -47,6 +48,31 @@ export default function PipHero({ src, alt }: { src: string; alt: string }) {
     };
     addEventListener("pip:feel", onFeel);
     return () => { removeEventListener("pip:feel", onFeel); clearTimeout(feelT.current); };
+  }, []);
+
+  // Commands (dance, spin, wave...): CSS does the moving, this sets the state and sprinkles matching sparks.
+  const [act, setAct] = useState<Act | null>(null);
+  const [talk, setTalk] = useState(false);
+  const actT = useRef(0);
+  useEffect(() => {
+    const onAct = (e: Event) => {
+      const a = (e as CustomEvent<{ act: unknown }>).detail?.act;
+      if (!isAct(a)) return;
+      setAct(a);
+      if (a !== "sleep") { setAwake(true); clearTimeout(nap.current); nap.current = window.setTimeout(() => setAwake(false), ACT_MS[a] + 4000); }
+      if (!matchMedia("(prefers-reduced-motion:reduce)").matches) {
+        const chars = ACT_FX[a];
+        const burst = Array.from({ length: 9 }, (_, i) => ({ id: ++fxId.current, ch: chars[i % chars.length], x: 22 + Math.random() * 56, y: 10 + Math.random() * 40, dx: Math.round((Math.random() - 0.5) * 80) }));
+        setFx((cur) => [...cur, ...burst]);
+        window.setTimeout(() => setFx((cur) => cur.filter((p) => !burst.some((b) => b.id === p.id))), 2400);
+      }
+      clearTimeout(actT.current);
+      actT.current = window.setTimeout(() => setAct(null), ACT_MS[a]);
+    };
+    const onTalk = (e: Event) => setTalk(Boolean((e as CustomEvent<{ on: boolean }>).detail?.on));
+    addEventListener("pip:act", onAct);
+    addEventListener("pip:talk", onTalk);
+    return () => { removeEventListener("pip:act", onAct); removeEventListener("pip:talk", onTalk); clearTimeout(actT.current); };
   }, []);
 
   useEffect(() => {
@@ -115,7 +141,7 @@ export default function PipHero({ src, alt }: { src: string; alt: string }) {
   return (
     <div
       className="stage" ref={stage} onClick={poke} onKeyDown={key}
-      role="button" tabIndex={0} data-sleep={asleep} data-feel={feel ?? undefined}
+      role="button" tabIndex={0} data-sleep={asleep} data-feel={feel ?? undefined} data-act={act ?? undefined} data-talk={talk || undefined}
       aria-label={asleep ? "Pip is sleeping. Press to wake him." : "Pip. Press to make him giggle."}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -9,6 +9,7 @@ import Story from "@/components/Story";
 import EasterEgg from "@/components/EasterEgg";
 import StatsStrip from "@/components/StatsStrip";
 import PipHero from "@/components/PipHero";
+import PipTalk from "@/components/PipTalk";
 import VisitorCounter from "@/components/VisitorCounter";
 import { ReplayIntro } from "@/components/Intro";
 
@@ -43,6 +44,7 @@ export default function Home() {
               <PipHero src="/images/hero.webp" alt="Pip, a gentle skull baby in a star nightcap, sitting on a cloud holding a glowing lantern and a tiny unicorn music box" />
             </div>
             <EasterEgg />
+            <PipTalk />
           </div>
         </div>
       </div>
