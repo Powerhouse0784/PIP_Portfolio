@@ -1377,3 +1377,40 @@ body:has(.dream-game) main.dream-game{isolation:isolate}
 @media(max-width:850px){.story-showcase{grid-template-columns:1fr}.story-sky-art{min-height:440px}.story-chapters{min-height:410px}.story-stamp{flex-basis:96px}.story-stamp b{font-size:.85rem}}
 @media(max-width:560px){#story.story-next{padding:54px 0}.story-next-head{align-items:flex-start;gap:12px}.story-stamp{flex:0 0 72px;font-size:.8rem;margin-top:14px}.story-stamp small{font-size:.42rem}.story-stamp b{font-size:.68rem}.story-next-head h2{font-size:clamp(2rem,9vw,3rem)}.story-deck{font-size:.93rem;line-height:1.65}.story-sky-art{min-height:350px;border-radius:22px}.story-art-caption{left:16px;top:18px;font-size:.5rem;letter-spacing:.11em}.story-moon-disc{width:53px;right:14%;top:15%}.story-moon-disc:after{width:48px;left:11px;top:-5px}.story-star-button{width:42px;left:30%;top:27%}.story-village{left:3%;right:3%;bottom:17%;height:37%;gap:3px}.house-name{font-size:.48rem}.story-art-footer{left:15px;right:15px;bottom:16px;font-size:.48rem}.story-art-footer>span:last-child{font-size:.43rem}.story-chapters{padding:21px;border-radius:22px;min-height:400px}.story-chapter-icon{margin:22px 0 15px;width:52px;height:52px;border-radius:16px}.story-chapter-card h3{font-size:1.7rem}.story-chapter-card>p{font-size:.92rem;line-height:1.7}.story-bottom-note{gap:9px}.story-bottom-note p{font-size:.78rem}}
 @media(prefers-reduced-motion:reduce){.story-star-button,.story-chapter-card{animation:none!important;transition:none!important}}
+
+/* Dark Room: hard override so switching the room light on can never leave a mask over the content. */
+#darkroom .dr.lit {
+  background: radial-gradient(ellipse at 50% 25%, #796394 0%, #403153 55%, #29203d 100%) !important;
+  color: #fff1d2 !important;
+  cursor: auto !important;
+  overflow: visible;
+  isolation: isolate;
+}
+#darkroom .dr.lit .dr-lit,
+#darkroom .dr.lit ul.dr-lit {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 2 !important;
+  grid-area: 1 / 1 !important;
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  -webkit-mask: none !important;
+  mask: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  clip-path: none !important;
+  background: transparent !important;
+  color: #fff1d2 !important;
+  pointer-events: auto;
+}
+#darkroom .dr.lit .dr-base { opacity: 0 !important; visibility: hidden !important; }
+#darkroom .dr.lit .dr-lit li {
+  opacity: 1 !important;
+  visibility: visible !important;
+  color: #fff1d2 !important;
+  background: rgba(255, 239, 204, .12) !important;
+  border: 1px solid rgba(255, 225, 166, .32) !important;
+}
