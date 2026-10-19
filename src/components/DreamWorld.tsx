@@ -134,7 +134,7 @@ export default function DreamWorld() {
       if(idx%2===0){ const crystal=new THREE.Mesh(new THREE.OctahedronGeometry(.3),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.5})); crystal.position.set(0,.8,1.55); g.add(crystal); }
     });
     // Controls: camera-relative walk, jump, sprint, mouse orbit, touch joystick.
-    const keys = new Set<string>(); let pitch=.18, zoom=9, dragging=false, lastX=0,lastY=0, jumpV=0, grounded=true, touchX=0,touchY=0;
+    const keys = new Set<string>(); let pitch=.18, zoom=9, dragging=false, lastX=0,lastY=0, jumpV=0, grounded=true, touchX=0,touchY=0, touchSprint=false, touchJump=false;
     // Vehicle-like controls: gentle acceleration, coasting and gradual steering.
     let driveSpeed=0; const maxDriveSpeed=5.2, sprintDriveSpeed=8.2, reverseSpeed=-2.3, driveAcceleration=2.0, sprintAcceleration=4.6, driveBrake=3.4, steeringRate=1.65;
     const down=(e:KeyboardEvent)=>{ if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault(); keys.add(e.key.toLowerCase()); if(e.key.toLowerCase()==="e") { const p=closestPortal(); if(p) actionRef.current(p); } if(e.key.toLowerCase()==="escape"){ if(featureOpenRef.current){featureOpenRef.current=false;setActiveFeature(null);} else setPaused(v=>!v); } };
@@ -145,7 +145,7 @@ export default function DreamWorld() {
     const pointerMove=(e:PointerEvent)=>{if(!dragging)return; pitch=Math.max(-.08,Math.min(.55,pitch+(e.clientY-lastY)*.003));lastX=e.clientX;lastY=e.clientY;};
     const pointerUp=()=>dragging=false;
     const wheel=(e:WheelEvent)=>{zoom=Math.max(5,Math.min(22,zoom+e.deltaY*.012));};
-    const touchMove=(e:Event)=>{const d=(e as CustomEvent<{x:number;y:number}>).detail;touchX=d.x;touchY=d.y;};
+    const touchMove=(e:Event)=>{const d=(e as CustomEvent<{x?:number;y?:number;sprint?:boolean;jump?:boolean}>).detail; if(typeof d.x==="number")touchX=d.x; if(typeof d.y==="number")touchY=d.y; if(typeof d.sprint==="boolean")touchSprint=d.sprint; if(d.jump)touchJump=true;};
     window.addEventListener("dream-touch",touchMove);
     const resize=()=>{if(!host)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight);};
     window.addEventListener("keydown",down);window.addEventListener("keyup",up);window.addEventListener("resize",resize);
@@ -161,7 +161,7 @@ export default function DreamWorld() {
       const moving=Math.abs(driveSpeed)>.12;
       const controlsLocked=pausedRef.current||featureOpenRef.current;
       if(!controlsLocked){
-        const sprinting=keys.has("shift")&&forward>0;
+        const sprinting=(keys.has("shift")||touchSprint)&&forward>0;
         const forwardLimit=sprinting?sprintDriveSpeed:maxDriveSpeed;
         if(forward>0) {
           // Shift raises the actual speed target and acceleration; it is not just a tiny add-on
@@ -184,7 +184,7 @@ export default function DreamWorld() {
       const isWalking=moving||inputActive;
       // Hard square bounds with a small inset so Pip never clips through the fence.
       player.position.x=THREE.MathUtils.clamp(player.position.x,-50.8,50.8);player.position.z=THREE.MathUtils.clamp(player.position.z,-50.8,50.8);
-      if((keys.has(" ")||keys.has("space"))&&grounded&&!pausedRef.current){jumpV=6.2;grounded=false;}
+      if((keys.has(" ")||keys.has("space")||touchJump)&&grounded&&!pausedRef.current){jumpV=6.2;grounded=false;touchJump=false;}
       jumpV-=18*dt;player.position.y+=jumpV*dt;if(player.position.y<=0){player.position.y=0;jumpV=0;grounded=true;}
       const gaitRate=5+Math.min(1,Math.abs(driveSpeed)/maxDriveSpeed)*5;const bob=moving?Math.sin(t*gaitRate)*.035:Math.sin(t*2.2)*.018;head.position.y=1.6+bob;arms[0].rotation.z=-.45+(moving?Math.sin(t*gaitRate)*.22:Math.sin(t*1.8)*.04);arms[1].rotation.z=.45-(moving?Math.sin(t*gaitRate)*.22:Math.sin(t*1.8)*.04);legs[0].position.z=moving?Math.sin(t*gaitRate)*.10:0;legs[1].position.z=moving?-Math.sin(t*gaitRate)*.10:0;
       portalMeshes.forEach((g,i)=>{g.rotation.y=Math.sin(t*.25+i)*.06;g.children.forEach(c=>{if(c instanceof THREE.Mesh&&c.geometry instanceof THREE.TorusGeometry)c.rotation.z=t*.12*(i%2?1:-1);});});
@@ -199,7 +199,7 @@ export default function DreamWorld() {
     return()=>{cancelAnimationFrame(frame);window.removeEventListener("keydown",down);window.removeEventListener("keyup",up);window.removeEventListener("resize",resize);window.removeEventListener("dream-touch",touchMove);renderer.domElement.removeEventListener("pointerdown",pointerDown);renderer.domElement.removeEventListener("pointermove",pointerMove);renderer.domElement.removeEventListener("pointerup",pointerUp);renderer.domElement.removeEventListener("pointercancel",pointerUp);renderer.domElement.removeEventListener("wheel",wheel);scene.traverse(o=>{if(o instanceof THREE.Mesh||o instanceof THREE.Points){o.geometry.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if("map" in m && m.map)m.map.dispose();m.dispose();});}});renderer.dispose();if(host.contains(renderer.domElement))host.removeChild(renderer.domElement);};
   }, []);
 
-  const setTouch=(x:number,y:number)=>{const event=new CustomEvent("dream-touch",{detail:{x,y}});window.dispatchEvent(event);};
+  const setTouch=(x:number,y:number,extra:{sprint?:boolean;jump?:boolean}={})=>{const event=new CustomEvent("dream-touch",{detail:{x,y,...extra}});window.dispatchEvent(event);};
   const enterMobileFullscreen = async () => {
     try {
       const root = document.querySelector(".dream-game") as HTMLElement | null;
@@ -225,7 +225,10 @@ export default function DreamWorld() {
     {activeFeature&&!paused&&<div className="dream-modal-backdrop dream-activity-backdrop" onClick={()=>{featureOpenRef.current=false;setActiveFeature(null);}}><section className="dream-modal dream-feature-modal dream-activity-modal" onClick={e=>e.stopPropagation()}><button className="dream-modal-close" aria-label="Close activity and return to 3D world" onClick={()=>{featureOpenRef.current=false;setActiveFeature(null);}}>×</button><DreamFeatureContent id={activeFeature.id as DreamFeatureId} /><button className="dream-primary dream-return-world" onClick={()=>{featureOpenRef.current=false;setActiveFeature(null);}}>← Return to the same place in Dream World</button></section></div>}
     {welcomeToast&&<div className="dream-toast dream-welcome-toast" role="status"><span className="dream-welcome-icon">✦</span><span><b>Welcome to Pip’s Dream World!</b><small> You’re now in the 3D park. Move with WASD or arrow keys; the camera follows Pip as you explore.</small></span><button aria-label="Dismiss welcome message" onClick={()=>setWelcomeToast(false)}>×</button></div>}
     {message&&<div className="dream-toast" role="status">{message}<button onClick={()=>setMessage("")}>×</button><Link href="/">Open workshop ↗</Link></div>}
-    <div className="dream-mobile-controls"><button onTouchStart={()=>setTouch(0,-1)} onTouchEnd={()=>setTouch(0,0)} >▲</button><div><button onTouchStart={()=>setTouch(-1,0)} onTouchEnd={()=>setTouch(0,0)} >◀</button><button onTouchStart={()=>setTouch(1,0)} onTouchEnd={()=>setTouch(0,0)} >▶</button></div><button onTouchStart={()=>setTouch(0,1)} onTouchEnd={()=>setTouch(0,0)} >▼</button></div>
+    <div className="dream-mobile-controls" aria-label="Mobile game controls">
+      <div className="dream-mobile-dpad"><button aria-label="Walk forward" onPointerDown={e=>{e.preventDefault();setTouch(0,-1)}} onPointerUp={()=>setTouch(0,0)} onPointerCancel={()=>setTouch(0,0)} onPointerLeave={()=>setTouch(0,0)}>▲</button><div><button aria-label="Steer left" onPointerDown={e=>{e.preventDefault();setTouch(-1,0)}} onPointerUp={()=>setTouch(0,0)} onPointerCancel={()=>setTouch(0,0)} onPointerLeave={()=>setTouch(0,0)}>◀</button><button aria-label="Steer right" onPointerDown={e=>{e.preventDefault();setTouch(1,0)}} onPointerUp={()=>setTouch(0,0)} onPointerCancel={()=>setTouch(0,0)} onPointerLeave={()=>setTouch(0,0)}>▶</button></div><button aria-label="Reverse" onPointerDown={e=>{e.preventDefault();setTouch(0,1)}} onPointerUp={()=>setTouch(0,0)} onPointerCancel={()=>setTouch(0,0)} onPointerLeave={()=>setTouch(0,0)}>▼</button></div>
+      <div className="dream-mobile-actions"><button className="dream-mobile-action walk" onPointerDown={e=>{e.preventDefault();setTouch(0,-1)}} onPointerUp={()=>setTouch(0,0)} onPointerCancel={()=>setTouch(0,0)} onPointerLeave={()=>setTouch(0,0)}><span>↟</span>Walk</button><button className="dream-mobile-action sprint" onPointerDown={e=>{e.preventDefault();setTouch(0,-1,{sprint:true})}} onPointerUp={()=>setTouch(0,0,{sprint:false})} onPointerCancel={()=>setTouch(0,0,{sprint:false})} onPointerLeave={()=>setTouch(0,0,{sprint:false})}><span>⚡</span>Sprint</button><button className="dream-mobile-action jump" onPointerDown={e=>{e.preventDefault();setTouch(0,0,{jump:true})}}><span>↑</span>Jump</button><button className="dream-mobile-action interact" disabled={!current} onClick={()=>{if(current){featureOpenRef.current=true;setActiveFeature(current);}}}><span>✦</span>Interact</button></div>
+    </div>
     {message&&null}
   </main>;
 }

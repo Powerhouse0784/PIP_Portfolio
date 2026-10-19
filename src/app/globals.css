@@ -1202,3 +1202,42 @@ body:has(.dream-game) main.dream-game{isolation:isolate}
   .dream-rotate-prompt button{margin-top:12px;padding:13px 18px;border:1px solid #f4d49d66;border-radius:999px;background:linear-gradient(135deg,#f0d3a0,#e8b8c8);color:#2b2344;font-weight:800}
   @keyframes dream-phone-turn{0%,20%{transform:rotate(0)}65%,90%{transform:rotate(90deg)}100%{transform:rotate(90deg)}}
 }
+
+/* Compact mobile-game HUD: keep only useful controls on small screens. */
+@media (max-width: 760px) {
+  .dream-location, .dream-bottom-left, .dream-controls { display: none !important; }
+  .dream-hud { padding: 7px 10px !important; background: linear-gradient(180deg, #101126d9, transparent) !important; }
+  .dream-brand-mark { width: 30px !important; height: 30px !important; font-size: 18px !important; }
+  .dream-brand small { display: none !important; }
+  .dream-brand b { font-size: 9px !important; }
+  .dream-hud-right { gap: 5px !important; }
+  .dream-icon-btn { min-width: 32px !important; height: 32px !important; }
+  .dream-fullscreen-btn { min-width: 32px !important; height: 32px !important; padding: 0 8px !important; }
+  .dream-fullscreen-btn span { display: none !important; }
+  .dream-exit { height: 32px !important; font-size: 9px !important; }
+  .dream-welcome-toast { max-width: calc(100% - 20px) !important; padding: 8px 10px !important; top: 48px !important; font-size: 10px !important; }
+  .dream-welcome-toast small { display: none !important; }
+  .dream-mobile-controls { position: absolute; inset: auto 10px max(10px, env(safe-area-inset-bottom)) 10px; display: flex !important; justify-content: space-between; align-items: end; pointer-events: none; z-index: 6; }
+  .dream-mobile-dpad, .dream-mobile-actions { pointer-events: auto; }
+  .dream-mobile-dpad { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .dream-mobile-dpad > div { display: flex; gap: 4px; }
+  .dream-mobile-controls button { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .dream-mobile-dpad button { width: 42px !important; height: 38px !important; border: 1px solid #f5dfbb66 !important; border-radius: 12px !important; background: #17162fe8 !important; color: #fff3db !important; font-size: 17px !important; box-shadow: 0 5px 15px #0005; }
+  .dream-mobile-actions { display: grid; grid-template-columns: repeat(2, minmax(66px, 78px)); gap: 6px; }
+  .dream-mobile-actions .dream-mobile-action { display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 5px; width: 100%; height: 38px; padding: 0 7px; border: 1px solid #f5dfbb66; border-radius: 12px; background: #17162fe8; color: #fff3db; font-size: 10px; font-weight: 800; box-shadow: 0 5px 15px #0005; }
+  .dream-mobile-action span { font-size: 14px; color: #f4d49d; }
+  .dream-mobile-actions .sprint { background: #533b6beF; border-color: #d8aaff99; }
+  .dream-mobile-actions .jump { background: #244d5aeF; border-color: #9ce7df99; }
+  .dream-mobile-actions .interact { background: linear-gradient(135deg,#f0d3a0,#e8b8c8); color: #2b2344; border-color: #f5dfbb; }
+  .dream-mobile-actions .interact span { color: #2b2344; }
+  .dream-mobile-actions .interact:disabled { opacity: .48; }
+  .dream-interact { bottom: 102px !important; }
+  .dream-minimap { display: none !important; }
+}
+@media (max-width: 760px) and (orientation: landscape) {
+  .dream-mobile-controls { inset: auto 12px max(8px, env(safe-area-inset-bottom)) 12px; }
+  .dream-mobile-dpad button { width: 38px !important; height: 34px !important; }
+  .dream-mobile-actions { grid-template-columns: repeat(2, 72px); gap: 5px; }
+  .dream-mobile-actions .dream-mobile-action { height: 33px; font-size: 9px; }
+  .dream-interact { bottom: 90px !important; }
+}
