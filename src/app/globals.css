@@ -1414,3 +1414,65 @@ body:has(.dream-game) main.dream-game{isolation:isolate}
   background: rgba(255, 239, 204, .12) !important;
   border: 1px solid rgba(255, 225, 166, .32) !important;
 }
+
+
+/* Dark Room definitive fix: light-on state is separate from the masked flashlight layer. */
+#darkroom .dr-room-lit {
+  position: relative !important;
+  display: block !important;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: clamp(300px, 52vw, 420px);
+  padding: clamp(24px, 4vw, 44px);
+  overflow: visible !important;
+  border-radius: 32px;
+  color: #fff1d2 !important;
+  background: radial-gradient(ellipse at 50% 20%, #796394 0%, #403153 55%, #29203d 100%) !important;
+  box-shadow: inset 0 0 90px #f4d49d18;
+  isolation: isolate;
+}
+#darkroom .dr-room-lit-heading {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 22px;
+  color: #fff1d2;
+  text-align: center;
+  font: italic 700 clamp(1.35rem, 3vw, 2rem) var(--serif);
+}
+#darkroom ul.dr-room-lit-secrets {
+  position: relative !important;
+  inset: auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: clamp(12px, 2.4vw, 20px);
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  clip-path: none !important;
+  -webkit-mask: none !important;
+  mask: none !important;
+  background: transparent !important;
+  color: #fff1d2 !important;
+}
+#darkroom ul.dr-room-lit-secrets li {
+  display: flex !important;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 18px !important;
+  border: 1px solid rgba(255, 225, 166, .32) !important;
+  border-radius: 18px;
+  background: rgba(255, 239, 204, .12) !important;
+  color: #fff1d2 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  font: 500 1.05rem/1.55 var(--ui);
+}
+#darkroom .dr-room-lit-secrets li span { color: #f2c56b !important; font-size: 2.2rem; line-height: 1; }
+#darkroom .dr-room-lit-secrets li p { margin: 0; color: #fff1d2 !important; }
+@media (max-width: 600px) { #darkroom .dr-room-lit { min-height: 0; padding: 22px; } }
