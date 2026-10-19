@@ -76,7 +76,7 @@ export default function DarkRoom() {
           </div>
         ) : (
           <div ref={el} className="dr" onPointerDown={(e) => aim(e.clientX, e.clientY)} onPointerMove={(e) => aim(e.clientX, e.clientY)} onTouchMove={(e) => { const t = e.touches[0]; if (t) aim(t.clientX, t.clientY); }}>
-            <p className="dr-base" aria-hidden="true">shhh… it’s dark in here</p>
+            <p className="dr-base" aria-hidden="true">shhh… it’s dark in here<br /><span>Move your pointer to find the secrets</span></p>
             <ul className="dr-lit">
               {SECRETS.map(([g, t]) => <li key={g}><span aria-hidden="true">{g}</span>{t}</li>)}
             </ul>
