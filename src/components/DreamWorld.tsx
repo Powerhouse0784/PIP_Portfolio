@@ -134,7 +134,7 @@ export default function DreamWorld() {
       if(idx%2===0){ const crystal=new THREE.Mesh(new THREE.OctahedronGeometry(.3),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.5})); crystal.position.set(0,.8,1.55); g.add(crystal); }
     });
     // Controls: camera-relative walk, jump, sprint, mouse orbit, touch joystick.
-    const keys = new Set<string>(); let pitch=.18, zoom=9, dragging=false, lastX=0,lastY=0, jumpV=0, grounded=true, touchX=0,touchY=0, touchSprint=false, touchJump=false;
+    const keys = new Set<string>(); let pitch=.18, zoom=9, dragging=false, lastX=0,lastY=0, jumpV=0, grounded=true, touchX=0,touchY=0, touchSprint=false, touchJump=false; const activeTouchControls = new Map<string,{x:number;y:number;sprint?:boolean}>();
     // Vehicle-like controls: gentle acceleration, coasting and gradual steering.
     let driveSpeed=0; const maxDriveSpeed=5.2, sprintDriveSpeed=8.2, reverseSpeed=-2.3, driveAcceleration=2.0, sprintAcceleration=4.6, driveBrake=3.4, steeringRate=1.65;
     const down=(e:KeyboardEvent)=>{ if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault(); keys.add(e.key.toLowerCase()); if(e.key.toLowerCase()==="e") { const p=closestPortal(); if(p) actionRef.current(p); } if(e.key.toLowerCase()==="escape"){ if(featureOpenRef.current){featureOpenRef.current=false;setActiveFeature(null);} else setPaused(v=>!v); } };
@@ -145,7 +145,13 @@ export default function DreamWorld() {
     const pointerMove=(e:PointerEvent)=>{if(!dragging)return; pitch=Math.max(-.08,Math.min(.55,pitch+(e.clientY-lastY)*.003));lastX=e.clientX;lastY=e.clientY;};
     const pointerUp=()=>dragging=false;
     const wheel=(e:WheelEvent)=>{zoom=Math.max(5,Math.min(22,zoom+e.deltaY*.012));};
-    const touchMove=(e:Event)=>{const d=(e as CustomEvent<{x?:number;y?:number;sprint?:boolean;jump?:boolean}>).detail; if(typeof d.x==="number")touchX=d.x; if(typeof d.y==="number")touchY=d.y; if(typeof d.sprint==="boolean")touchSprint=d.sprint; if(d.jump)touchJump=true;};
+    const touchMove=(e:Event)=>{const d=(e as CustomEvent<{control?:string;active?:boolean;x?:number;y?:number;sprint?:boolean;jump?:boolean}>).detail;
+      if(d.control){if(d.active)activeTouchControls.set(d.control,{x:d.x??0,y:d.y??0,sprint:!!d.sprint});else activeTouchControls.delete(d.control);
+        touchX=0;touchY=0;touchSprint=false;
+        for(const input of activeTouchControls.values()){touchX=Math.max(-1,Math.min(1,touchX+input.x));touchY=Math.max(-1,Math.min(1,touchY+input.y));touchSprint=touchSprint||!!input.sprint;}
+      } else {if(typeof d.x==="number")touchX=d.x;if(typeof d.y==="number")touchY=d.y;if(typeof d.sprint==="boolean")touchSprint=d.sprint;}
+      if(d.jump)touchJump=true;
+    };
     window.addEventListener("dream-touch",touchMove);
     const resize=()=>{if(!host)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight);};
     window.addEventListener("keydown",down);window.addEventListener("keyup",up);window.addEventListener("resize",resize);
@@ -199,9 +205,15 @@ export default function DreamWorld() {
     return()=>{cancelAnimationFrame(frame);window.removeEventListener("keydown",down);window.removeEventListener("keyup",up);window.removeEventListener("resize",resize);window.removeEventListener("dream-touch",touchMove);renderer.domElement.removeEventListener("pointerdown",pointerDown);renderer.domElement.removeEventListener("pointermove",pointerMove);renderer.domElement.removeEventListener("pointerup",pointerUp);renderer.domElement.removeEventListener("pointercancel",pointerUp);renderer.domElement.removeEventListener("wheel",wheel);scene.traverse(o=>{if(o instanceof THREE.Mesh||o instanceof THREE.Points){o.geometry.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if("map" in m && m.map)m.map.dispose();m.dispose();});}});renderer.dispose();if(host.contains(renderer.domElement))host.removeChild(renderer.domElement);};
   }, []);
 
-  const setTouch=(x:number,y:number,extra:{sprint?:boolean;jump?:boolean}={})=>{const event=new CustomEvent("dream-touch",{detail:{x,y,...extra}});window.dispatchEvent(event);};
-  const pressTouch=(e: React.PointerEvent<HTMLButtonElement>, x:number, y:number, extra:{sprint?:boolean;jump?:boolean}={})=>{e.preventDefault(); try{e.currentTarget.setPointerCapture(e.pointerId);}catch{} setTouch(x,y,extra);};
-  const releaseTouch=(e: React.PointerEvent<HTMLButtonElement>, extra:{sprint?:boolean}={})=>{e.preventDefault(); try{if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);}catch{} setTouch(0,0,extra);};
+  const setTouchControl=(control:string, active:boolean, x:number, y:number, extra:{sprint?:boolean;jump?:boolean}={})=>{
+    window.dispatchEvent(new CustomEvent("dream-touch",{detail:{control,active,x,y,...extra}}));
+  };
+  const pressTouch=(e: React.PointerEvent<HTMLButtonElement>, control:string, x:number, y:number, extra:{sprint?:boolean;jump?:boolean}={})=>{
+    e.preventDefault();try{e.currentTarget.setPointerCapture(e.pointerId);}catch{}setTouchControl(control,true,x,y,extra);
+  };
+  const releaseTouch=(e: React.PointerEvent<HTMLButtonElement>, control:string)=>{
+    e.preventDefault();try{if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);}catch{}setTouchControl(control,false,0,0);
+  };
   const enterMobileFullscreen = async () => {
     try {
       const root = document.querySelector(".dream-game") as HTMLElement | null;
@@ -229,14 +241,14 @@ export default function DreamWorld() {
     {message&&<div className="dream-toast" role="status">{message}<button onClick={()=>setMessage("")}>×</button><Link href="/">Open workshop ↗</Link></div>}
     <div className="dream-mobile-controls" aria-label="Mobile game controls">
       <div className="dream-mobile-dpad" aria-label="Movement">
-        <button aria-label="Walk forward" onPointerDown={e=>pressTouch(e,0,-1)} onPointerUp={e=>releaseTouch(e)} onPointerCancel={e=>releaseTouch(e)} onLostPointerCapture={e=>releaseTouch(e)}>▲</button>
-        <div><button aria-label="Steer left" onPointerDown={e=>pressTouch(e,-1,0)} onPointerUp={e=>releaseTouch(e)} onPointerCancel={e=>releaseTouch(e)} onLostPointerCapture={e=>releaseTouch(e)}>◀</button><button aria-label="Steer right" onPointerDown={e=>pressTouch(e,1,0)} onPointerUp={e=>releaseTouch(e)} onPointerCancel={e=>releaseTouch(e)} onLostPointerCapture={e=>releaseTouch(e)}>▶</button></div>
-        <button aria-label="Reverse" onPointerDown={e=>pressTouch(e,0,1)} onPointerUp={e=>releaseTouch(e)} onPointerCancel={e=>releaseTouch(e)} onLostPointerCapture={e=>releaseTouch(e)}>▼</button>
+        <button aria-label="Walk forward" onPointerDown={e=>pressTouch(e,"forward",0,-1)} onPointerUp={e=>releaseTouch(e,"forward")} onPointerCancel={e=>releaseTouch(e,"forward")} onLostPointerCapture={e=>releaseTouch(e,"forward")}>▲</button>
+        <div><button aria-label="Steer left" onPointerDown={e=>pressTouch(e,"left",-1,0)} onPointerUp={e=>releaseTouch(e,"left")} onPointerCancel={e=>releaseTouch(e,"left")} onLostPointerCapture={e=>releaseTouch(e,"left")}>◀</button><button aria-label="Steer right" onPointerDown={e=>pressTouch(e,"right",1,0)} onPointerUp={e=>releaseTouch(e,"right")} onPointerCancel={e=>releaseTouch(e,"right")} onLostPointerCapture={e=>releaseTouch(e,"right")}>▶</button></div>
+        <button aria-label="Reverse" onPointerDown={e=>pressTouch(e,"reverse",0,1)} onPointerUp={e=>releaseTouch(e,"reverse")} onPointerCancel={e=>releaseTouch(e,"reverse")} onLostPointerCapture={e=>releaseTouch(e,"reverse")}>▼</button>
       </div>
       <div className="dream-mobile-actions" aria-label="Actions">
-        <button className="dream-mobile-action walk" onPointerDown={e=>pressTouch(e,0,-1)} onPointerUp={e=>releaseTouch(e)} onPointerCancel={e=>releaseTouch(e)} onLostPointerCapture={e=>releaseTouch(e)}><span>↟</span>Walk</button>
-        <button className="dream-mobile-action sprint" onPointerDown={e=>pressTouch(e,0,-1,{sprint:true})} onPointerUp={e=>releaseTouch(e,{sprint:false})} onPointerCancel={e=>releaseTouch(e,{sprint:false})} onLostPointerCapture={e=>releaseTouch(e,{sprint:false})}><span>⚡</span>Sprint</button>
-        <button className="dream-mobile-action jump" onPointerDown={e=>{e.preventDefault();setTouch(0,0,{jump:true});}}><span>↑</span>Jump</button>
+        <button className="dream-mobile-action walk" onPointerDown={e=>pressTouch(e,"walk",0,-1)} onPointerUp={e=>releaseTouch(e,"walk")} onPointerCancel={e=>releaseTouch(e,"walk")} onLostPointerCapture={e=>releaseTouch(e,"walk")}><span>↟</span>Walk</button>
+        <button className="dream-mobile-action sprint" onPointerDown={e=>pressTouch(e,"sprint",0,-1,{sprint:true})} onPointerUp={e=>releaseTouch(e,"sprint")} onPointerCancel={e=>releaseTouch(e,"sprint")} onLostPointerCapture={e=>releaseTouch(e,"sprint")}><span>⚡</span>Sprint</button>
+        <button className="dream-mobile-action jump" onPointerDown={e=>{e.preventDefault();setTouchControl("jump",true,0,0,{jump:true});}}><span>↑</span>Jump</button>
         <button className="dream-mobile-action interact" disabled={!current||paused||!!activeFeature} onClick={()=>{if(current){featureOpenRef.current=true;setActiveFeature(current);}}}><span>✦</span>Interact</button>
       </div>
     </div>
