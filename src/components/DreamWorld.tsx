@@ -200,6 +200,8 @@ export default function DreamWorld() {
   }, []);
 
   const setTouch=(x:number,y:number,extra:{sprint?:boolean;jump?:boolean}={})=>{const event=new CustomEvent("dream-touch",{detail:{x,y,...extra}});window.dispatchEvent(event);};
+  const pressTouch=(e: React.PointerEvent<HTMLButtonElement>, x:number, y:number, extra:{sprint?:boolean;jump?:boolean}={})=>{e.preventDefault(); try{e.currentTarget.setPointerCapture(e.pointerId);}catch{} setTouch(x,y,extra);};
+  const releaseTouch=(e: React.PointerEvent<HTMLButtonElement>, extra:{sprint?:boolean}={})=>{e.preventDefault(); try{if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);}catch{} setTouch(0,0,extra);};
   const enterMobileFullscreen = async () => {
     try {
       const root = document.querySelector(".dream-game") as HTMLElement | null;
@@ -226,8 +228,17 @@ export default function DreamWorld() {
     {welcomeToast&&<div className="dream-toast dream-welcome-toast" role="status"><span className="dream-welcome-icon">✦</span><span><b>Welcome to Pip’s Dream World!</b><small> You’re now in the 3D park. Move with WASD or arrow keys; the camera follows Pip as you explore.</small></span><button aria-label="Dismiss welcome message" onClick={()=>setWelcomeToast(false)}>×</button></div>}
     {message&&<div className="dream-toast" role="status">{message}<button onClick={()=>setMessage("")}>×</button><Link href="/">Open workshop ↗</Link></div>}
     <div className="dream-mobile-controls" aria-label="Mobile game controls">
-      <div className="dream-mobile-dpad"><button aria-label="Walk forward" onPointerDown={e=>{e.preventDefault();setTouch(0,-1)}} onPointerUp={()=>setTouch(0,0)} onPointerCancel={()=>setTouch(0,0)} onPointerLeave={()=>setTouch(0,0)}>▲</button><div><button aria-label="Steer left" onPointerDown={e=>{e.preventDefault();setTouch(-1,0)}} onPointerUp={()=>setTouch(0,0)} onPointerCancel={()=>setTouch(0,0)} onPointerLeave={()=>setTouch(0,0)}>◀</button><button aria-label="Steer right" onPointerDown={e=>{e.preventDefault();setTouch(1,0)}} onPointerUp={()=>setTouch(0,0)} onPointerCancel={()=>setTouch(0,0)} onPointerLeave={()=>setTouch(0,0)}>▶</button></div><button aria-label="Reverse" onPointerDown={e=>{e.preventDefault();setTouch(0,1)}} onPointerUp={()=>setTouch(0,0)} onPointerCancel={()=>setTouch(0,0)} onPointerLeave={()=>setTouch(0,0)}>▼</button></div>
-      <div className="dream-mobile-actions"><button className="dream-mobile-action walk" onPointerDown={e=>{e.preventDefault();setTouch(0,-1)}} onPointerUp={()=>setTouch(0,0)} onPointerCancel={()=>setTouch(0,0)} onPointerLeave={()=>setTouch(0,0)}><span>↟</span>Walk</button><button className="dream-mobile-action sprint" onPointerDown={e=>{e.preventDefault();setTouch(0,-1,{sprint:true})}} onPointerUp={()=>setTouch(0,0,{sprint:false})} onPointerCancel={()=>setTouch(0,0,{sprint:false})} onPointerLeave={()=>setTouch(0,0,{sprint:false})}><span>⚡</span>Sprint</button><button className="dream-mobile-action jump" onPointerDown={e=>{e.preventDefault();setTouch(0,0,{jump:true})}}><span>↑</span>Jump</button><button className="dream-mobile-action interact" disabled={!current} onClick={()=>{if(current){featureOpenRef.current=true;setActiveFeature(current);}}}><span>✦</span>Interact</button></div>
+      <div className="dream-mobile-dpad" aria-label="Movement">
+        <button aria-label="Walk forward" onPointerDown={e=>pressTouch(e,0,-1)} onPointerUp={e=>releaseTouch(e)} onPointerCancel={e=>releaseTouch(e)} onLostPointerCapture={e=>releaseTouch(e)}>▲</button>
+        <div><button aria-label="Steer left" onPointerDown={e=>pressTouch(e,-1,0)} onPointerUp={e=>releaseTouch(e)} onPointerCancel={e=>releaseTouch(e)} onLostPointerCapture={e=>releaseTouch(e)}>◀</button><button aria-label="Steer right" onPointerDown={e=>pressTouch(e,1,0)} onPointerUp={e=>releaseTouch(e)} onPointerCancel={e=>releaseTouch(e)} onLostPointerCapture={e=>releaseTouch(e)}>▶</button></div>
+        <button aria-label="Reverse" onPointerDown={e=>pressTouch(e,0,1)} onPointerUp={e=>releaseTouch(e)} onPointerCancel={e=>releaseTouch(e)} onLostPointerCapture={e=>releaseTouch(e)}>▼</button>
+      </div>
+      <div className="dream-mobile-actions" aria-label="Actions">
+        <button className="dream-mobile-action walk" onPointerDown={e=>pressTouch(e,0,-1)} onPointerUp={e=>releaseTouch(e)} onPointerCancel={e=>releaseTouch(e)} onLostPointerCapture={e=>releaseTouch(e)}><span>↟</span>Walk</button>
+        <button className="dream-mobile-action sprint" onPointerDown={e=>pressTouch(e,0,-1,{sprint:true})} onPointerUp={e=>releaseTouch(e,{sprint:false})} onPointerCancel={e=>releaseTouch(e,{sprint:false})} onLostPointerCapture={e=>releaseTouch(e,{sprint:false})}><span>⚡</span>Sprint</button>
+        <button className="dream-mobile-action jump" onPointerDown={e=>{e.preventDefault();setTouch(0,0,{jump:true});}}><span>↑</span>Jump</button>
+        <button className="dream-mobile-action interact" disabled={!current||paused||!!activeFeature} onClick={()=>{if(current){featureOpenRef.current=true;setActiveFeature(current);}}}><span>✦</span>Interact</button>
+      </div>
     </div>
     {message&&null}
   </main>;

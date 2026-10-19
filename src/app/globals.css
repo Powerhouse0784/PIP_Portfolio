@@ -1241,3 +1241,27 @@ body:has(.dream-game) main.dream-game{isolation:isolate}
   .dream-mobile-actions .dream-mobile-action { height: 33px; font-size: 9px; }
   .dream-interact { bottom: 90px !important; }
 }
+
+/* Mobile-first game HUD: remove desktop narration and keep reliable, thumb-sized controls. */
+@media (max-width: 760px), (pointer: coarse) and (max-height: 600px) {
+  .dream-bottom-left,
+  .dream-location,
+  .dream-controls,
+  .dream-welcome-toast { display: none !important; }
+  .dream-mobile-controls { display: flex !important; }
+  .dream-mobile-controls button { touch-action: none !important; -webkit-user-select: none !important; user-select: none !important; }
+}
+@media (pointer: coarse) and (orientation: landscape) {
+  .dream-game { position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100dvh !important; min-height: 0 !important; overflow: hidden !important; }
+  .dream-game-canvas, .dream-game-canvas canvas { width: 100% !important; height: 100% !important; }
+  .dream-bottom-left, .dream-location, .dream-controls, .dream-welcome-toast { display: none !important; }
+  .dream-hud { padding: max(5px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 5px max(8px, env(safe-area-inset-left)) !important; }
+  .dream-brand-mark { display: none !important; }
+  .dream-brand b { font-size: 9px !important; }
+  .dream-mobile-controls { inset: auto max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important; align-items: end !important; pointer-events: none !important; }
+  .dream-mobile-dpad, .dream-mobile-actions { pointer-events: auto !important; }
+  .dream-mobile-dpad button { width: clamp(36px, 6vw, 48px) !important; height: clamp(32px, 7vh, 44px) !important; }
+  .dream-mobile-actions { grid-template-columns: repeat(2, minmax(72px, 94px)) !important; gap: 7px !important; }
+  .dream-mobile-actions .dream-mobile-action { height: clamp(34px, 7vh, 44px) !important; font-size: clamp(10px, 1.5vw, 12px) !important; }
+  .dream-interact { display: none !important; }
+}
