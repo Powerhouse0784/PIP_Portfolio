@@ -52,7 +52,7 @@ export default function Goodnight() {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (onRef.current) { if (e.key === "Escape") close(); return; }
-      if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || typeof e.key !== "string" || e.key.length !== 1) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) { buf.current = ""; return; }
       buf.current = (buf.current + e.key.toLowerCase()).replace(/[^a-z]/g, "").slice(-WORD.length);
