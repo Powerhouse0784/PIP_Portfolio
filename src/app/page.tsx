@@ -5,6 +5,7 @@ import DeliveryRoute from "@/components/DeliveryRoute";
 import Greeting from "@/components/Greeting";
 import TonightSky from "@/components/TonightSky";
 import ChaosToggle from "@/components/ChaosToggle";
+import { TrailToggle } from "@/components/SparkleTrail";
 import Story from "@/components/Story";
 import EasterEgg from "@/components/EasterEgg";
 import StatsStrip from "@/components/StatsStrip";
@@ -36,6 +37,7 @@ export default function Home() {
             <h1>I build the <span className="grad">dreams</span> you fall asleep inside.</h1>
             <p className="lede">Hello, sleepyhead! I’m Pip, a tiny dream engineer with big ideas and a very important bedtime job.</p>
             <div className="cta-row"><a className="btn" href="#projects">Explore my little world →</a><a className="chip" href="#tour">See everything Pip can do</a></div>
+            <a className="dream-world-entry" href="/dream-world"><span>✦</span> Enter the 3D Dream World <span>↗</span></a>
             <StatsStrip />
             <div className="hero-notes"><Greeting /><TonightSky /></div>
           </div>
@@ -150,7 +152,7 @@ export default function Home() {
           <a className="brand" href="#top">pip ✦</a>
           <p style={{ margin: "12px 0" }}>Made with my hands and enormous yawns. Sweet dreams.</p>
           <div className="badges" aria-label="Retro web badges">
-            <span className="badge">best viewed in dreamland</span><span className="badge">made with ♥ + Next.js</span><span className="badge">no cookies for you</span><ChaosToggle /><ReplayIntro />
+            <span className="badge">best viewed in dreamland</span><span className="badge">made with ♥ + Next.js</span><span className="badge">no cookies for you</span><ChaosToggle /><TrailToggle /><ReplayIntro />
           </div>
           <VisitorCounter />
           <p>Character &amp; artwork: haX.baby Track 1 official asset pack.</p>

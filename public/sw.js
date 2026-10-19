@@ -1,8 +1,9 @@
 /* Pip's Dream Workshop service worker.
  * Pages: network first (always fresh when online), cached copy when offline.
- * Build files, images and icons: cache first (they never change under the same URL).
+ * Build files (content-hashed, never change under one URL): cache first. Images and icons keep their file names when they are
+ * updated, so they are served from the cache instantly and refreshed in the background (stale-while-revalidate).
  * API calls, the admin page, audio and cross-origin requests are never touched. */
-const VERSION = "pip-v20";
+const VERSION = "pip-v28";
 const STATIC = `${VERSION}-static`;
 const PAGES = `${VERSION}-pages`;
 const PRECACHE = ["/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png", "/images/hero.webp", "/images/wave.webp", "/images/box.webp", "/images/lamp.webp", "/images/og.png"];
@@ -37,6 +38,17 @@ async function networkFirst(request) {
   }
 }
 
+async function staleWhileRevalidate(event) {
+  const request = event.request;
+  const cache = await caches.open(STATIC);
+  const hit = await cache.match(request);
+  const refresh = fetch(request)
+    .then((res) => { if (res && res.ok && res.type === "basic") cache.put(request, res.clone()); return res; })
+    .catch(() => null);
+  event.waitUntil(refresh);
+  return hit || (await refresh) || Response.error();
+}
+
 async function cacheFirst(request) {
   const cache = await caches.open(STATIC);
   const hit = await cache.match(request);
@@ -54,7 +66,6 @@ self.addEventListener("fetch", (event) => {
   const path = url.pathname;
   if (path.startsWith("/api/") || path.startsWith("/admin") || path === "/sw.js") return;
   if (req.mode === "navigate") { event.respondWith(networkFirst(req)); return; }
-  if (path.startsWith("/_next/static/") || path.startsWith("/images/") || path.startsWith("/icons/") || path === "/icon.svg") {
-    event.respondWith(cacheFirst(req));
-  }
+  if (path.startsWith("/_next/static/")) { event.respondWith(cacheFirst(req)); return; }
+  if (path.startsWith("/images/") || path.startsWith("/icons/") || path === "/icon.svg") event.respondWith(staleWhileRevalidate(event));
 });

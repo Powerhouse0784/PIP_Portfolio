@@ -131,8 +131,11 @@ export default function Storybook() {
 
   return (
     <div className="sb">
+      {/* The book takes focus so the arrow keys turn pages (see its label); the Prev/Next buttons are the pointer equivalent. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
         className={`bkstage${spread ? " spread" : " single"}${spread && t === 0 ? " at-start" : ""}${spread && t === leaves ? " at-end" : ""}`}
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
         tabIndex={0}
         role="group"
         aria-roledescription="book"

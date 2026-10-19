@@ -135,6 +135,8 @@ export default function RetroDesktop() {
         <div className="rd-stage" ref={stage}>
           {state === "open" && (
             <div className="rd-win" ref={win} role="group" aria-label="Pip.exe window" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
+              {/* A draggable title bar that is also keyboard-movable (arrow keys, Home to reset), as its label says. */}
+              {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
               <div className="rd-bar" tabIndex={0} aria-label="Pip.exe title bar. Use the arrow keys to move the window, Home to reset" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onKeyDown={barKey}>
                 <span aria-hidden="true">✦</span><b>PIP.EXE</b>
                 <span className="rd-btns">
@@ -192,6 +194,8 @@ export default function RetroDesktop() {
             <div className="rd-start">
               <button aria-expanded={menu} aria-haspopup="true" onClick={() => setMenu((m) => !m)}>✦ Start</button>
               {menu && (
+                // Closes the menu when any link inside is activated (Enter on a focused link also fires click).
+                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
                 <ul className="rd-menu" onClick={() => setMenu(false)}>
                   <li><a href="#projects">Pip’s projects</a></li>
                   <li><a href="#storybook">Bedtime storybook</a></li>

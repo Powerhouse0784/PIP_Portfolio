@@ -26,14 +26,14 @@ export default function DarkRoom() {
       <div className="wrap">
         <p className="label">Nightlight cursor</p>
         <h2>The Dark Room</h2>
-        <p className="small" style={{ marginBottom: 16 }}>Move your pointer or drag a finger to shine Pip’s nightlight on his secrets.</p>
-        <div ref={el} className={`dr${lit ? " lit" : ""}`} onPointerMove={(e) => aim(e.clientX, e.clientY)} onTouchMove={(e) => aim(e.touches[0].clientX, e.touches[0].clientY)}>
+        <p className="small" style={{ marginBottom: 16 }}>Move your pointer, or tap and drag a finger, to shine Pip’s nightlight on his secrets. Or switch the room light on.</p>
+        <div ref={el} className={`dr${lit ? " lit" : ""}`} onPointerDown={(e) => aim(e.clientX, e.clientY)} onPointerMove={(e) => aim(e.clientX, e.clientY)} onTouchMove={(e) => aim(e.touches[0].clientX, e.touches[0].clientY)}>
           <p className="dr-base" aria-hidden="true">shhh… it’s dark in here</p>
           <ul className="dr-lit">
             {SECRETS.map(([g, t]) => <li key={g}><span aria-hidden="true">{g}</span>{t}</li>)}
           </ul>
         </div>
-        <button className="chip" aria-pressed={lit} onClick={() => setLit(!lit)} style={{ marginTop: 16 }}>{lit ? "Turn the room light off" : "Turn the room light on"}</button>
+        <button className="chip dr-switch" aria-pressed={lit} onClick={() => setLit(!lit)}>{lit ? "Turn the room light off" : "Turn the room light on"}</button>
       </div>
     </section>
   );

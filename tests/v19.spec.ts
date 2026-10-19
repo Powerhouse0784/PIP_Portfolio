@@ -71,25 +71,6 @@ test.describe("weather: opt-in, private, gentle", () => {
   });
 });
 
-test.describe("scroll-linked story picture", () => {
-  test("the picture changes as you scroll, and the page never scrolls sideways", async ({ page }) => {
-    const errs: string[] = [];
-    page.on("pageerror", (e) => errs.push(String(e)));
-    await page.goto("/");
-    await warm(page);
-    const p = async (f: number) => {
-      await page.evaluate((f) => { const s = document.querySelector("#story")!; const r = s.getBoundingClientRect(); scrollTo(0, r.top + scrollY + (r.height - innerHeight * 0.6) * f); }, f);
-      await page.waitForTimeout(600);
-      return Number(await page.locator(".stg").evaluate((e) => getComputedStyle(e).getPropertyValue("--p")));
-    };
-    const a = await p(0.05), b = await p(0.95);
-    expect(b).toBeGreaterThan(a + 0.2);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(0);
-    await expect(page.locator(".stg")).toHaveAttribute("role", "img");
-    expect(errs).toEqual([]);
-  });
-});
-
 test("chapter rail is the only .rail on the page (no leftover story dots)", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(".rail")).toHaveCount(1);

@@ -12,23 +12,23 @@ const openChat = () => { const b = document.querySelector<HTMLButtonElement>(".c
 
 const CARDS: Card[] = [
   // Tier 1
-  { id: "eyes", tier: 1, icon: "👀", title: "Pip watches you", text: "Move your pointer (or touch the screen) and his eyes follow. Poke him for a giggle.", cta: "Say hi", sticker: "giggle", run: go("top") },
-  { id: "daynight", tier: 1, icon: "🌗", title: "Day and night mood", text: "Flip the theme: the palette changes, and at night Pip falls asleep until you tap him awake.", cta: "Switch it", sticker: "night", run: press('[data-act="theme"]') },
-  { id: "story", tier: 1, icon: "📜", title: "A story that scrolls", text: "Three scenes advance as you scroll, from a falling star to the first dream delivery.", cta: "Read it", run: go("story") },
-  { id: "egg", tier: 1, icon: "✨", title: "A shy hidden star", text: "A tiny star hides near Pip’s picture and moves every day. Poke it five times. (Another secret: type “goodnight”.)", cta: "Hint me", sticker: "egg", run: () => { go("top")(); say("Look around my picture for a tiny shy star. Poke it five times!"); } },
+  { id: "eyes", tier: 1, icon: "👀", title: "Pip watches you", text: "Move your pointer and his eyes follow. Poke him!", cta: "Say hi", sticker: "giggle", run: go("top") },
+  { id: "daynight", tier: 1, icon: "🌗", title: "Day and night mood", text: "Flip the theme. At night Pip falls asleep.", cta: "Switch it", sticker: "night", run: press('[data-act="theme"]') },
+  { id: "story", tier: 1, icon: "📜", title: "A story that scrolls", text: "Scenes advance as you scroll, from falling star to first delivery.", cta: "Read it", run: go("story") },
+  { id: "egg", tier: 1, icon: "✨", title: "A shy hidden star", text: "A shy star hides near Pip and moves daily. Poke it five times.", cta: "Hint me", sticker: "egg", run: () => { go("top")(); say("Look around my picture for a tiny shy star. Poke it five times!"); } },
   // Tier 2
-  { id: "lullaby", tier: 2, icon: "🎵", title: "Lullaby Lab", text: "Pick a mood and press play for a real lullaby. Sound is off until you opt in, and the ♪ button mutes everything.", cta: "Play one", sticker: "lullaby", run: go("projects") },
-  { id: "flashlight", tier: 2, icon: "🔦", title: "Nightlight flashlight", text: "Shine a light through the dark and uncover Pip’s hidden dream layers.", cta: "Grab the light", sticker: "darkroom", run: go("darkroom") },
-  { id: "route", tier: 2, icon: "🏠", title: "Dream Delivery map", text: "A star glides along the rooftop route as you scroll. Tap a house for tonight’s delivery.", cta: "Follow it", sticker: "route", run: go("routes") },
-  { id: "storybook", tier: 2, icon: "📖", title: "Page-turn storybook", text: "Flip pages with a swipe, the buttons or the arrow keys.", cta: "Open the book", sticker: "storybook", run: go("storybook") },
-  { id: "toys", tier: 2, icon: "🧱", title: "Block tower and rattle", text: "Stack blocks until the tower wobbles, or shake the rattle until a star pops out.", cta: "Play", sticker: "tower", run: go("toys") },
-  { id: "catcher", tier: 2, icon: "⭐", title: "Catch the falling dreams", text: "A little game: catch stars, hearts are worth triple.", cta: "Start catching", sticker: "catcher", run: go("catcher") },
+  { id: "lullaby", tier: 2, icon: "🎵", title: "Lullaby Lab", text: "Pick a mood, press play. Sound is opt-in; ♪ mutes it.", cta: "Play one", sticker: "lullaby", run: go("projects") },
+  { id: "flashlight", tier: 2, icon: "🔦", title: "Nightlight flashlight", text: "Shine a light to uncover hidden dream layers.", cta: "Grab the light", sticker: "darkroom", run: go("darkroom") },
+  { id: "route", tier: 2, icon: "🏠", title: "Dream Delivery map", text: "A star glides the rooftop route as you scroll.", cta: "Follow it", sticker: "route", run: go("routes") },
+  { id: "storybook", tier: 2, icon: "📖", title: "Page-turn storybook", text: "Flip pages by swipe, buttons or arrow keys.", cta: "Open the book", sticker: "storybook", run: go("storybook") },
+  { id: "toys", tier: 2, icon: "🧱", title: "Block tower and rattle", text: "Stack blocks till the tower wobbles. Shake the rattle.", cta: "Play", sticker: "tower", run: go("toys") },
+  { id: "catcher", tier: 2, icon: "⭐", title: "Catch the falling dreams", text: "Catch stars; hearts are worth triple.", cta: "Start catching", sticker: "catcher", run: go("catcher") },
   // Tier 3
-  { id: "pip3d", tier: 3, icon: "🧊", title: "Pip in real 3D", text: "A true WebGL Pip you can drag around, poke, make giggle, wave at or tuck in. His eyes follow you.", cta: "Meet 3D Pip", sticker: "pip3d", run: go("pip3d") },
-  { id: "mobile3d", tier: 3, icon: "🔔", title: "The 3D dream mobile", text: "Nine orbiting stars ring a scale, and every guestbook wish floats in as a star.", cta: "Ring a star", sticker: "mobile3d", run: go("mobile3d") },
-  { id: "guestbook", tier: 3, icon: "✍️", title: "Live dream guestbook", text: "Leave a wish for everyone to read. It is saved on a real backend; add a star or heart to others’ notes.", cta: "Leave a wish", sticker: "guestbook", run: go("guestbook") },
-  { id: "memory", tier: 3, icon: "🧠", title: "Pip remembers you", text: "He counts your visits, greets you back, keeps your night streak and your stickers (all stored only in your browser).", cta: "See my stickers", run: () => window.dispatchEvent(new Event("pip:stickers")) },
-  { id: "chat", tier: 3, icon: "💬", title: "Chat or talk to Pip", text: "Ask him anything in his own voice (AI, with a rule-based fallback), or use the mic in the Dream Corner.", cta: "Open the chat", sticker: "chat", run: openChat },
+  { id: "pip3d", tier: 3, icon: "🧊", title: "Pip in real 3D", text: "A real WebGL Pip: drag, poke, wave, tuck him in.", cta: "Meet 3D Pip", sticker: "pip3d", run: go("pip3d") },
+  { id: "mobile3d", tier: 3, icon: "🔔", title: "The 3D dream mobile", text: "Nine stars ring a scale; guestbook wishes float in.", cta: "Ring a star", sticker: "mobile3d", run: go("mobile3d") },
+  { id: "guestbook", tier: 3, icon: "✍️", title: "Live dream guestbook", text: "Leave a wish on a real backend. Star or heart others’.", cta: "Leave a wish", sticker: "guestbook", run: go("guestbook") },
+  { id: "memory", tier: 3, icon: "🧠", title: "Pip remembers you", text: "He counts your visits and keeps your streak, in your browser only.", cta: "See my stickers", run: () => window.dispatchEvent(new Event("pip:stickers")) },
+  { id: "chat", tier: 3, icon: "💬", title: "Chat or talk to Pip", text: "Chat or talk to Pip: AI, with a rule-based fallback.", cta: "Open the chat", sticker: "chat", run: openChat },
 ];
 
 const TIERS: { n: 1 | 2 | 3; tag: string; title: string; sub: string }[] = [

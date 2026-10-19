@@ -67,6 +67,8 @@ export default function Goodnight() {
 
   if (!on) return null;
   return (
+    // Tapping anywhere wakes Pip. Keyboard users have Escape and the "Wake Pip up" button.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <div className="gn" role="dialog" aria-modal="true" aria-label="Goodnight. Pip is asleep" onClick={close}>
       <div className="gn-stars" aria-hidden="true">{Array.from({ length: 24 }, (_, i) => <i key={i} style={{ left: `${(i * 37) % 100}%`, top: `${(i * 53) % 90}%`, animationDelay: `${(i % 7) * 0.5}s` }} />)}</div>
       <div className="gn-card">

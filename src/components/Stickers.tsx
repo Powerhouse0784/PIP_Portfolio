@@ -96,6 +96,8 @@ export default function Stickers() {
       <div className="toast" role="status" aria-live="polite">
         {first && <p key={`${queue.length}-${first.id}`}><span aria-hidden="true">{first.icon}</span> New sticker: <b>{first.name}</b></p>}
       </div>
+      {/* A native <dialog>: Escape closes it; clicking the backdrop is the mouse shortcut. */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
       <dialog
         ref={dlg} className="sbk" aria-labelledby="sbt"
         onClose={() => setOpen(false)}

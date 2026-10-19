@@ -60,7 +60,7 @@ Sound is off until the visitor opts in (top-bar ♪ or pressing Play in the Lull
 - **Hero entrance and chapter rail (v18)**: the hero's text and Pip's arch animate in staggered, timed to the opening scene (it waits behind the intro and plays as the clouds part; with no intro it plays from CSS at first paint, so it never waits for JavaScript). Scroll reveals now cover every section's heading and label. On screens 1200px and wider a **night-sky rail** (one star per chapter, filled by scroll progress, tooltips on hover or focus) shows where you are and jumps to a chapter. Reduced motion: nothing is hidden or animated. Safety nets: a script that never loads cannot leave the hero hidden (7 s timer) or the opening scene on screen (6 s timer).
 - **Dream postcards (v19)**: every dream Pip writes (the Dream Maker ticket, the daily card and the shared PNG) gets its own painted night scene, generated in the browser as an SVG from the dream's words and feeling (`lib/dreamArt.ts`). Same dream, same picture; a lantern, balloon, flower, rainbow, house or kite appears if the dream mentions one. No image API, no cost, works offline. Reduced motion freezes the twinkling and drifting.
 - **Check the sky (v19)**: under Tonight's sky, a visitor can opt in to real weather. They type a town (or share their location); only that town or those coordinates go to Open-Meteo (free, no key, CC BY 4.0), Pip comments on it in his speech bubble, and rain, snow, drizzle, fog or storm drifts over the nursery (CSS only, no flashing, hidden for reduced motion, never blocks clicks). Saved in this browser only; "Forget my town" clears it (`lib/weather.ts`, `components/SkyWeather.tsx`, `WeatherFX.tsx`).
-- **Scroll-linked origin story (v19)**: a painted panorama above the three story cards follows your scroll: dusk turns to night, stars appear, the fallen star lands, then a delivery star lights the rooftop windows one by one. It stays pinned under the header while the cards scroll on phones. Reduced motion shows three still moments instead.
+- **Origin story as a 3D flight (v26)**: "How I became a dream engineer" is now a small CSS-3D diorama. Scrolling flies the camera through the nursery: dusk turns to night, the star lands, the lantern drifts in and a delivery star lights the rooftops. The pointer tilts the world, the sleepy houses can be tapped awake, and Back/Next buttons jump between chapters. Reduced motion and short screens get the same story as calm stacked cards.
 - **Remembers your sound choice**: turning sound on or off is saved. A returning visitor who left it on gets a small "Welcome back, sound on?" prompt (after the intro, once per tab). Browsers still need that click, so nothing ever auto-plays.
 - **Mood-reactive scenery**: the lantern you pick tints the whole page; the Lullaby Lab tints it in the lullaby's mood and pulses it with every note. The same colour lights the 3D dream mobile, and the matching star pulses in time with each note (`lib/tint.ts`, `components/Atmosphere.tsx`).
 - **Tonight's real sky**: the true moon phase (mean synodic month, about half a day accurate) and a time-of-day greeting, computed in the browser from the clock. No API, nothing sent anywhere (`lib/sky.ts`).
@@ -164,3 +164,48 @@ Keep `GEMINI_API_KEY`, `XAI_API_KEY`/`GROK_API_KEY`, and `GROQ_API_KEY` in serve
 - **Draw something:** a drawing pad (pointer, touch, pen) plus "Pip doodles" for keyboard users.
 - **Type or talk:** the idea box and the microphone understand all of the above ("tell me a story about a dragon", "put on the glasses", "take a photo", "wake up"), then moves (spin, wave...), then the AI.
 - Voice engine shared with the rest of the site: `lib/pipVoice.ts`.
+
+
+## v29: the chat gets out of the way
+- **The open Pip chat now closes when you tap or click anywhere else, scroll the page (mouse wheel, finger drag, scrollbar, keys), or press Escape** (focus returns to the chat button). Pressing inside the chat, scrolling its message list, or using its button behaves as before. Two guards keep it from closing when it should not: page movement is ignored while your cursor is in the message box (on phones the on-screen keyboard nudges the page) and for half a second after opening. Closing also stops the microphone and Pip's voice. Tests: `tests/v29.spec.ts`.
+
+## v28: full audit and fixes
+I checked every file, id, asset, CSS variable, env var, test selector and import against each other, type-checked the project (with stand-ins for the packages that were not installed), and ran all 26 Node-only unit tests (all passed) plus the new ones. What I found and fixed:
+- **Guestbook falsely rejected harmless notes.** The "no links" filter treated `.me` and `.co` as web addresses and ignored capital letters, so a kid typing `I love it.Me too` (no space after the full stop) was told "No links in the nursery". The rule now lives in `lib/guestbookRules.ts`: it blocks a scheme (`https://`), `www.`, and real lowercase domains (`shop.com`, `kid@gmail.com`, `bit.ly`) only. Tests: `tests/unit-v28.spec.ts`.
+- **Guestbook could show a technical error.** If the network dropped, the form showed "Failed to fetch"; if a proxy answered with an HTML error page, it showed a JSON parser message. Both are now kind sentences, and the note stays in the box. Tests: `tests/v28.spec.ts`.
+- **Updated pictures could stay stale for a year.** `/images`, `/audio` and `/icons` were cached as `immutable` for a year even though their file names do not change, and the service worker never refreshed them. Now: one day in the browser cache plus a background refresh (`stale-while-revalidate`), and the service worker serves images and icons instantly while refreshing them quietly (build files, which are content-hashed, stay cache-first).
+- **No safety net for a crash in the root layout.** Added `app/global-error.tsx` so a layout-level failure shows "Pip tripped over a blanket" instead of a blank page.
+- Checked and found fine: every `#anchor` and element id exists, every referenced image/audio/icon exists, no undefined CSS variables, every import is in `package.json`, no leaked timers, no `console.log`, `alert` or TODO left in `src`, the only `dangerouslySetInnerHTML` uses are static trusted strings, and the database functions match the code that calls them.
+- Still worth verifying on your machine (I cannot run a browser or the AI/Supabase services here): `npm install && npm run build && npm test`, then the live site on a phone. The default AI model names (`gemini-flash-latest`, `grok-4.3`, the Gemini TTS model) can be overridden with `GEMINI_MODEL`, `XAI_MODEL` and `GEMINI_TTS_MODEL` if a provider renames them; a wrong name only means Pip falls back to the next provider or his hand-written lines.
+
+## v27: side quests, accessibility and a calmer test suite
+- **Sparkle cursor trail** (Early-Web side quest, +2): stars, bubbles and glitter follow the mouse and fade out. One transparent canvas that never takes clicks, running only while sparks are alive (`lib/trail.ts` is the pure maths, `components/SparkleTrail.tsx` draws it). Mouse and pen only; off for touch screens and reduced motion. A footer switch ("Sparkle trail: on/off", remembered in this browser) and a Jump menu command turn it off. Chaos mode doubles the glitter.
+- **Responsive Chaos Mode, for real** (side quest, +5): before, chaos just tilted cards. Now it reshapes itself to the screen it is on and re-scatters live as the window changes or the phone rotates (`lib/chaos.ts`, `components/ChaosToggle.tsx`). Six screen tiers (pocket, phone, tablet, laptop, desktop, cinema) each get their own tilt, card offsets, grid columns, border personality (dotted, dashed, double, grooved) and a sticker count that scales with the screen area. A small retro readout shows what it decided (`CHAOS · 1440x900 · desktop`). Decorations never take clicks; calming down removes every trace. No sideways scroll at any size.
+- **Pip answers your guestbook wish**: after you sign, Pip writes a one-line reply in his own voice (Gemini, Grok or Groq through the chat route, told which section you are in; hand-written lines naming you when the AI is asleep) and reacts with a mood. It is shown to you only and is not stored.
+- **Shorter "Everything Pip can do" cards** (the brief's golden rule: about 150 words per section). The tour's card text went from about 300 words to about 145.
+- **Accessibility**: `npm run lint:a11y` runs eslint-plugin-jsx-a11y over `src` (zero findings; each deliberate exception carries a comment saying where the keyboard route is). It found one real bug, now fixed: `aria-pressed` on the moderation page's tabs (`role="tab"` uses `aria-selected`). `tests/a11y.spec.ts` runs axe-core on the whole page in day and night and on the open chat; serious or critical problems fail it, colour contrast is a separate soft check.
+- **Fix**: `tests/voice.spec.ts` assigned `globalThis.navigator`, which throws on Node 21 and newer (it is a read-only getter there), so three voice tests failed on a current Node. It now uses `Object.defineProperty`.
+- **Performance**: the Depth effect rescans for new layers at most once per frame instead of on every DOM change (streaming chat text and particle layers change the DOM constantly).
+- Tests: `tests/unit-v27.spec.ts` (Node, instant), `tests/v27.spec.ts` (browser), `tests/a11y.spec.ts` (axe). After pulling this version run `npm install` (new dev dependencies: axe-core, eslint and the a11y plugin).
+
+## v26 changes
+- **Dark Room**: the light now reveals every secret fully inside the room, on phones too (touch-drag aims the beam; the switch is a real button).
+- **Depth**: pictures and widgets lean toward the pointer (or a press on touch) with a gentle 3D tilt; off for reduced motion.
+- **Soft corners**: every picture, card, retro window, badge and receipt now has rounded corners.
+- **Responsive**: no sideways scroll from 320px to desktop; long lines wrap, the taskbar never wraps, the book fits its stage.
+- **Chapter rail**: jumping to a chapter re-aims after lazy sections load, and the last chapter lights at the page bottom.
+
+## Standalone 3D Dream World
+
+The immersive third-person Dream World is available at `/dream-world` and is also linked from the homepage hero. It is a separate full-screen destination; the original 2D workshop remains available through the Website link in the game HUD.
+
+### Controls
+- **WASD / Arrow keys:** move
+- **Shift:** sprint
+- **Space:** jump
+- **Mouse drag:** orbit camera
+- **Mouse wheel:** zoom
+- **E:** interact with a nearby glowing portal
+- **Esc:** pause/resume
+
+The world is built with Three.js using procedural scenery and a procedural Pip-inspired player, so it does not require external 3D model downloads. The six portals lead to corresponding features/sections in the existing 2D workshop.

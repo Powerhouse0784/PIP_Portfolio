@@ -418,6 +418,8 @@ export default function Pip3D() {
         <h2>Meet Pip in 3D</h2>
         <p className="small" style={{ marginBottom: 16 }}>He’s built from shapes right in your browser. Drag him around, tap his head, poke his bow, and watch his eyes follow you.</p>
         <div className="m3">
+          {/* A focusable 3D viewport: arrow keys turn Pip, Enter makes him giggle (see its label). */}
+          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
           <div className="m3-stage" ref={box} tabIndex={0} role="group" aria-label="Interactive 3D Pip. Use the left and right arrow keys to turn him, Enter to make him giggle">
             {failed && (
               <div className="m3-fallback">

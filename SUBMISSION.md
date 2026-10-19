@@ -16,9 +16,11 @@ For Tier 3 there is a real 3D Pip built in Three.js (drag to rotate, eyes that f
 
 Early-web soul is everywhere: a marquee, retro pill badges, a hit-counter odometer, and a draggable Windows-95-style "Pip's Desktop" with a Top 8 and a dream defragmenter. A second secret hides in plain sight: type "goodnight" and the whole nursery tucks Pip in.
 
-Built to be opened again tomorrow: a sticker book with 31 things to find, a night streak, a shy star that hides somewhere new every day, a new dream card every night, a calendar bedtime reminder, and an installable app that also opens offline.
+Early-web side quests: a live guestbook where Pip answers each wish in his own voice, a sparkle cursor trail (stars, bubbles and glitter that fade away), a hit-counter odometer, click sounds with a mute switch, and a Chaos Mode that genuinely reshapes the page to the screen: six screen sizes get six different tilts, columns, borders and sticker counts, re-scattering live as you resize or rotate, with a tiny retro readout of what it chose.
 
-My proudest details: one consistent motion language, sound that is off until you opt in, keyboard and touch support for every interaction, and a test suite that checks console errors, sideways scroll, every toy and the error states.
+Built to be opened again tomorrow: a sticker book with 30 things to find, a night streak, a shy star that hides somewhere new every day, a new dream card every night, a calendar bedtime reminder, and an installable app that also opens offline.
+
+My proudest details: one consistent motion language, sound that is off until you opt in, keyboard and touch support for every interaction, and a test suite that checks console errors, sideways scroll, every toy and the error states, plus an accessibility lint and an axe-core audit in day and night.
 
 ## Credits
 

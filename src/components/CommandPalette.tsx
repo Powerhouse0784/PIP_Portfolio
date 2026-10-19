@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { unlock } from "@/lib/progress";
+import { toggleTrail } from "@/components/SparkleTrail";
 
 type Cmd = { id: string; label: string; hint: string; keys: string; run: () => void };
 const reduced = () => matchMedia("(prefers-reduced-motion:reduce)").matches;
@@ -22,6 +23,7 @@ const CMDS: Cmd[] = [
   { id: "pip3d", label: "Meet Pip in 3D", hint: "Play", keys: "3d three webgl pip model rotate character", run: go("pip3d") },
   { id: "mobile3d", label: "Pip’s 3D dream mobile", hint: "Play", keys: "3d three webgl stars mobile chime", run: go("mobile3d") },
   { id: "dark", label: "The Dark Room (nightlight)", hint: "Go to", keys: "flashlight dark room nightlight", run: go("darkroom") },
+  { id: "trail", label: "Toggle sparkle cursor trail", hint: "Action", keys: "sparkle trail cursor stars glitter mouse", run: () => toggleTrail() },
   { id: "chaos", label: "Toggle chaos mode", hint: "Action", keys: "chaos wild fun", run: press("chaos") },
   { id: "theme", label: "Toggle day / night", hint: "Action", keys: "theme dark light mode", run: press("theme") },
   { id: "sound", label: "Toggle sound", hint: "Action", keys: "sound mute audio music", run: press("sound") },
@@ -69,6 +71,8 @@ export default function CommandPalette() {
   if (!open) return null;
 
   return (
+    // The backdrop click is a convenience for mouse users; keyboard users close the menu with Escape.
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div className="pal-bg" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
       <div className="pal" role="dialog" aria-modal="true" aria-label="Jump menu">
         <input
@@ -86,6 +90,8 @@ export default function CommandPalette() {
         />
         <ul role="listbox" aria-label="Commands">
           {list.map((c, n) => (
+            // Combobox pattern: the search box owns the keyboard (arrows + Enter); clicking an option is the mouse equivalent.
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
             <li key={c.id} role="option" aria-selected={n === i} className={n === i ? "on" : ""} onMouseEnter={() => setI(n)} onClick={() => run(c)}>
               <span>{c.label}</span><small>{c.hint}</small>
             </li>

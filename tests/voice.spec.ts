@@ -9,7 +9,7 @@ function fakeSpeech() {
   const spoken: string[] = [];
   g.window = { dispatchEvent: () => true };
   g.CustomEvent = class { type: string; detail: unknown; constructor(t: string, o?: { detail?: unknown }) { this.type = t; this.detail = o?.detail; } };
-  g.navigator = { language: "en-IN" };
+  Object.defineProperty(globalThis, "navigator", { value: { language: "en-IN" }, configurable: true, writable: true }); // Node 21+ ships a getter-only navigator, so plain assignment throws
   g.speechSynthesis = {
     cancel() { spoken.length = 0; }, resume() {}, getVoices: () => [{ name: "Samantha", lang: "en-US" }],
     speak(u: { text: string; onstart?: () => void }) { spoken.push(u.text); setTimeout(() => u.onstart?.(), 0); },

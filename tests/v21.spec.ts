@@ -23,7 +23,7 @@ test.describe("Pip's Desktop (retro window)", () => {
     await expect(page.getByText(/A very good pillow/)).toBeVisible();
 
     await page.getByRole("tab", { name: "defrag.exe" }).click();
-    await page.getByRole("button", { name: "Start" }).click();
+    await page.getByRole("button", { name: "Start", exact: true }).click();
     await expect(page.getByText("Done. 0 bad dreams found.")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole("progressbar", { name: "Defragmenting dreams" })).toHaveAttribute("aria-valuenow", "100");
     await expect(page.locator(".toast")).toContainText("Defragmenter");

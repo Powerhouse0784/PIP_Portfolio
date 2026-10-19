@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdmin } from "@/lib/supabaseAdmin";
 import { checkLimit, visitorKey } from "@/lib/rateLimit";
+import { looksLikeLink } from "@/lib/guestbookRules";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,8 +15,6 @@ const schema = z
   })
   .strict();
 
-// Links are the #1 guestbook spam vector and this is a cozy wall, so no links.
-const LINK = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|ru|xyz|top|biz|info|me|co)\b)/i;
 
 // GUESTBOOK_MODERATION=pending -> new notes wait for approval (flip is_approved in Supabase).
 const MODERATED = process.env.GUESTBOOK_MODERATION === "pending";
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Please check your name and message." }, { status: 400 });
   if (parsed.data.website) return NextResponse.json({ ok: true, pending: true }, { status: 202 }); // bot: pretend success
-  if (LINK.test(parsed.data.name) || LINK.test(parsed.data.message)) {
+  if (looksLikeLink(parsed.data.name) || looksLikeLink(parsed.data.message)) {
     return NextResponse.json({ error: "No links in the nursery, please. Just kind words!" }, { status: 400 });
   }
 

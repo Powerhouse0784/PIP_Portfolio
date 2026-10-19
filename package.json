@@ -8,7 +8,8 @@
     "start": "next start",
     "test": "playwright test",
     "test:install": "playwright install chromium",
-    "mock:llm": "node scripts/mock-llm.mjs"
+    "mock:llm": "node scripts/mock-llm.mjs",
+    "lint:a11y": "eslint -c eslint.a11y.config.mjs src"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -19,11 +20,15 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
     "@playwright/test": "^1.48.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/three": "^0.169.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-jsx-a11y": "^6.10.0",
     "typescript": "^5.6.0"
   }
 }

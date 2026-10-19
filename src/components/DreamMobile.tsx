@@ -20,7 +20,7 @@ const isNight = () => {
 };
 
 function archShape(w: number, h: number) {
-  const s = new THREE.Shape(), r = w / 2, b = 0.14;
+  const s = new THREE.Shape(), r = w / 2, b = Math.min(0.55, r * 0.45); // soft, clearly rounded bottom corners
   s.moveTo(-r + b, -h / 2);
   s.lineTo(r - b, -h / 2); s.quadraticCurveTo(r, -h / 2, r, -h / 2 + b);
   s.lineTo(r, h / 2 - r); s.absarc(0, h / 2 - r, r, 0, Math.PI, false);

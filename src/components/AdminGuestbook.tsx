@@ -86,7 +86,7 @@ export default function AdminGuestbook() {
             <div className="admin-bar">
               <div className="chips" role="tablist" aria-label="Note status">
                 {(Object.keys(TAB_LABEL) as Status[]).map((s) => (
-                  <button key={s} role="tab" aria-selected={tab === s} className="chip" aria-pressed={tab === s} onClick={() => pick(s)}>{TAB_LABEL[s]} · {counts[s]}</button>
+                  <button key={s} role="tab" aria-selected={tab === s} className="chip" onClick={() => pick(s)}>{TAB_LABEL[s]} · {counts[s]}</button>
                 ))}
               </div>
               <button className="chip" onClick={lock}>Lock</button>

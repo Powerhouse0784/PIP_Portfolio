@@ -74,6 +74,8 @@ export default function PipChat() {
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   const listenWanted = useRef(false);
   const end = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  const fab = useRef<HTMLButtonElement>(null);
   const busyRef = useRef(false);
   const lastLine = useRef<string | undefined>(undefined);
   const askRef = useRef<(t: string) => Promise<void>>(async () => {}); // the voice recogniser lives in a mount-once effect: it must always call the latest ask()
@@ -214,8 +216,49 @@ export default function PipChat() {
   };
   const toggleVoice = () => { setVoice((v) => { if (v) stopSpeaking(); return !v; }); };
 
+  // The open chat closes itself when you tap or scroll anywhere else on the page, or press Escape, so it never gets in the way.
+  useEffect(() => {
+    if (!open) return;
+    const t0 = performance.now(), y0 = scrollY;
+    const inside = (n: EventTarget | null) => n instanceof Node && !!root.current?.contains(n);
+    const close = (refocus = false) => {
+      stopListening(); stopSpeaking(); setOpen(false);
+      if (refocus) fab.current?.focus();
+    };
+    // Tap, click or pen press outside the chat. (A press on the chat button itself is handled by the button.)
+    const onPress = (e: PointerEvent) => { if (!inside(e.target)) close(); };
+    // Mouse wheel / trackpad outside the chat. Scrolling the message list inside the chat does not count.
+    const onWheel = (e: WheelEvent) => { if (!inside(e.target)) close(); };
+    // A finger drag that starts outside the chat (ignoring the tiny wobble of a tap).
+    let startY = 0, outside = false;
+    const onTouchStart = (e: TouchEvent) => { outside = !inside(e.target); startY = e.touches[0]?.clientY ?? 0; };
+    const onTouchMove = (e: TouchEvent) => { if (outside && Math.abs((e.touches[0]?.clientY ?? startY) - startY) > 10) close(); };
+    // The page itself scrolled (scrollbar drag, keyboard, momentum). Not while you are typing: on phones the on-screen keyboard
+    // can nudge the page, and that must never close the chat under your thumb. Also ignored just after opening.
+    const onScroll = () => {
+      if (performance.now() - t0 < 500 || root.current?.contains(document.activeElement)) return;
+      if (Math.abs(scrollY - y0) > 24) close();
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(true); };
+    document.addEventListener("pointerdown", onPress, true);
+    addEventListener("wheel", onWheel, { passive: true });
+    addEventListener("touchstart", onTouchStart, { passive: true });
+    addEventListener("touchmove", onTouchMove, { passive: true });
+    addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPress, true);
+      removeEventListener("wheel", onWheel);
+      removeEventListener("touchstart", onTouchStart);
+      removeEventListener("touchmove", onTouchMove);
+      removeEventListener("scroll", onScroll);
+      document.removeEventListener("keydown", onKey);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   return (
-    <div className="chat">
+    <div className="chat" ref={root}>
       {open && (
         <div className="chat-panel" role="dialog" aria-label="Chat with Pip">
           <p className="chat-mood" role="status" data-feel={mood ?? "idle"}>
@@ -243,7 +286,7 @@ export default function PipChat() {
           </form>
         </div>
       )}
-      <button className="chat-fab" aria-expanded={open} aria-label={open ? "Close chat with Pip" : "Chat with Pip"} onClick={() => setOpen(!open)}>{open ? "✕" : mood ? FEELS[mood].emoji : "💤"}</button>
+      <button className="chat-fab" ref={fab} aria-expanded={open} aria-label={open ? "Close chat with Pip" : "Chat with Pip"} onClick={() => setOpen(!open)}>{open ? "✕" : mood ? FEELS[mood].emoji : "💤"}</button>
     </div>
   );
 }

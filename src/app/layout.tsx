@@ -12,7 +12,9 @@ import Intro from "@/components/Intro";
 import Atmosphere from "@/components/Atmosphere";
 import SoundPrompt from "@/components/SoundPrompt";
 import ScrollFX from "@/components/ScrollFX";
+import Depth from "@/components/Depth";
 import ScrollRail from "@/components/ScrollRail";
+import SparkleTrail from "@/components/SparkleTrail";
 import WeatherFX from "@/components/WeatherFX";
 import Stickers from "@/components/Stickers";
 import PwaClient from "@/components/PwaClient";
@@ -60,13 +62,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeInit + introInit + heroInit }} />
       </head>
       <body>
-        <noscript><style>{".scene{opacity:1!important;transform:none!important}"}</style></noscript>
+        <noscript><style>{".st-card{opacity:1!important;visibility:visible!important}"}</style></noscript>
         <a className="skip" href="#top">Skip to content</a>
         <StarField />
         <Atmosphere />
         <WeatherFX />
         <ScrollFX />
+        <Depth />
         <ScrollRail />
+        <SparkleTrail />
         <AudioProvider>
           <SiteHeader />
           {children}
