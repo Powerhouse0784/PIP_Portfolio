@@ -1176,3 +1176,29 @@ body:has(.dream-game) main.dream-game{isolation:isolate}
 .dream-nearby-map .map-dot{width:7px!important;height:7px!important;border:1px solid #ffffffd9;box-shadow:0 0 8px currentColor!important;z-index:2}
 .dream-nearby-map .map-player{left:50%!important;top:50%!important;z-index:3}
 .dream-minimap small{margin-top:2px;line-height:1.5}
+
+/* Mobile 3D play: edge-to-edge landscape game with an orientation prompt in portrait. */
+.dream-fullscreen-btn{display:none;align-items:center;justify-content:center;gap:5px;min-width:38px;height:38px;padding:0 10px;border:1px solid #ffffff24;border-radius:12px;background:#16172fcc;color:#fff;font-size:17px;cursor:pointer}
+.dream-fullscreen-btn span{font-size:10px;font-weight:700}
+.dream-rotate-prompt{display:none}
+.dream-game:fullscreen{width:100vw;height:100dvh;inset:0;border-radius:0}
+.dream-game:fullscreen .dream-game-canvas{inset:0}
+@media(max-width:760px){
+  .dream-game{width:100vw;height:100dvh;height:100svh;inset:0;overflow:hidden;}
+  .dream-game-canvas,.dream-game-canvas canvas{width:100%;height:100%;}
+  .dream-fullscreen-btn{display:flex}
+  .dream-hud{padding-top:calc(env(safe-area-inset-top,0px) + 7px);padding-left:calc(env(safe-area-inset-left,0px) + 9px);padding-right:calc(env(safe-area-inset-right,0px) + 9px)}
+  .dream-controls{bottom:calc(env(safe-area-inset-bottom,0px) + 10px)}
+  .dream-mobile-controls{right:calc(env(safe-area-inset-right,0px) + 13px);bottom:calc(env(safe-area-inset-bottom,0px) + 72px)}
+  .dream-bottom-left{bottom:calc(env(safe-area-inset-bottom,0px) + 76px)}
+  .dream-rotate-prompt{display:none}
+}
+@media(max-width:760px) and (orientation:portrait){
+  .dream-rotate-prompt{position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;background:radial-gradient(ellipse at 50% 35%,#34305d,#17182f 55%,#090c1d);color:#fff0dc}
+  .dream-rotate-prompt h2{margin:7px 0;font-size:clamp(25px,7vw,34px);letter-spacing:-.04em}
+  .dream-rotate-prompt p:not(.dream-loading-kicker){max-width:290px;color:#c6c2dc;font-size:13px;line-height:1.7}
+  .dream-rotate-phone{position:relative;margin-bottom:18px;font-size:64px;color:#f4d49d;transform:rotate(0deg);animation:dream-phone-turn 2.3s ease-in-out infinite}
+  .dream-rotate-phone span{position:absolute;right:-19px;top:-7px;font-size:27px}
+  .dream-rotate-prompt button{margin-top:12px;padding:13px 18px;border:1px solid #f4d49d66;border-radius:999px;background:linear-gradient(135deg,#f0d3a0,#e8b8c8);color:#2b2344;font-weight:800}
+  @keyframes dream-phone-turn{0%,20%{transform:rotate(0)}65%,90%{transform:rotate(90deg)}100%{transform:rotate(90deg)}}
+}
